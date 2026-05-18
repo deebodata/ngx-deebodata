@@ -1,0 +1,16 @@
+<div class="relly">
+    <div #ddSelect class="deebo-dd-select-hide deebo-dd-export" [class.deebo-dd-select]="optsOpen">
+        @for(format of formats; track format){
+            <div class="deebo-dd-opt deebo-dd-export">
+                <button type="button" class="no-btn btn-export" (click)="handleExportData(format)" 
+                [disabled]="exporting || !count">{{format}}</button>
+            </div>
+        }
+    </div>
+</div>
+<div class="deebo-dd-contain deebo-dd-export flex-center">
+    <button type="button" class="btn-deebo-dd deebo-dd-export no-btn" (click)="toggleExportOpts()" [disabled]="disableExport()">
+        <span>Export {{count | number}} {{rowsStr}}</span>
+        <i class="material-icons" aria-hidden="false">{{optsOpen ? "keyboard_arrow_up" : "keyboard_arrow_down"}}</i>
+    </button>
+</div>

@@ -1,0 +1,27 @@
+<div #numColDistContainer class="num-col-val-dist-cont">
+    @for(nm of nmrksVdn; track nm){
+        <div class="vd-n-marker" [attr.data-value]="nm.value" [style.left]="nm.left">
+            {{nm.value}}
+        </div>
+    }
+    @for(nm of nmrksVdnH(); track nm){
+        <div class="vd-n-marker-h" [attr.data-value]="nm.value" [attr.data-perc]="nm.percent" [style.left]="nm.left">
+            {{nm.value}}
+        </div>
+    }
+    @for(nb of nColValBars(); track nb){
+        <div class="num-col-val-dist-bar" [attr.data-number]="nb.number"
+        (mouseenter)="matchVdBarToStat('insField' + common.elifyCol(column), nb.stat)" (mouseleave)="killAllVdHighlights()"
+        [ngStyle]="{ 'left': nb.left, 'background': (nb.background || 'rgb(50, 50, 50)') }"></div>
+    }
+    @if(avgColValBar){
+        <div class="num-col-avg-dist-bar" [style.left]="avgColValBar.left" [attr.data-number]="avgColValBar.number"
+        (mouseenter)="matchVdBarToStat('insField' + common.elifyCol(column), avgColValBar.number)" (mouseleave)="killAllVdHighlights()">
+        </div>
+    }
+</div>
+@if(dataTableService.dataFilSrtTracker[column]['colCellSymbol']){
+    <div class="center heavy pad-top-ten">
+        {{"("+dataTableService.dataFilSrtTracker[column]['colCellSymbol']+")"}}
+    </div>
+}

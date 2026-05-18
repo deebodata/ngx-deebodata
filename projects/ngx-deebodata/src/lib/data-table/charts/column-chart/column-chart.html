@@ -1,0 +1,47 @@
+@if(isNumData){
+    <div class="half-wid" [id]="'sum' + common.elifyCol(column)">
+        <span class="v-mid">Total: </span><span class="lg-text v-mid{{symCls}}" [attr.data-symbol]="symAttr">{{sum}}</span>
+    </div><div class="half-wid" [id]="'avg' + common.elifyCol(column)">
+        <span class="v-mid">Avg: </span><span class="lg-text v-mid{{symCls}}" [attr.data-symbol]="symAttr">{{avg}}</span>
+    </div><div class="half-wid" [id]="'min' + common.elifyCol(column)">
+        <span class="v-mid">Min: </span><span class="lg-text v-mid{{symCls}}" [attr.data-symbol]="symAttr">{{min}}</span>
+    </div><div class="half-wid" [id]="'max' + common.elifyCol(column)">
+        <span class="v-mid">Max: </span><span class="lg-text v-mid{{symCls}}" [attr.data-symbol]="symAttr">{{max}}</span>
+    </div>@if(modeHtml){ <div [innerHTML]="modeHtml"></div>}<div>{{tdivHtml}}</div>
+    @if(numValDistMsg){ <div class="vdh-loading">{{numValDistMsg}}</div> }
+    @if(numLen < numArrMax){
+        <app-num-value-distro-component
+        [column]="column"
+        [average]="numAvg"
+        [originalArr]="colData"
+        (done)="numValDistMsg = $event"
+        [title]="'Building ' + common.sanitizeUi(common.titleCase(column)) + ' value distribution...'"
+        ></app-num-value-distro-component>
+    }
+} @else {
+    @if(nonNumUVal){ <div>{{nonNumUVal}}</div> }
+    @if(nonNumEVal){ <div>{{nonNumEVal}}</div> }
+    @if(modeHtml){ <div [innerHTML]="modeHtml"></div> }
+}
+
+@if(pieData){
+    <app-pie-graph-component
+    [uncoverPie]="dataTableService.removePieCovers"
+    [data]="pieData"
+    [column]="column"
+    ></app-pie-graph-component>
+}
+@if(isBarGraph){
+    <app-bar-graph-component
+    [column]="column"
+    [data]="colData"
+    (title)="handleBgTitle($event)"
+    ></app-bar-graph-component>
+}
+@if(isLineGraph){
+    <app-line-graph-component
+    [column]="column"
+    [data]="colData"
+    (title)="handleBgTitle($event)"
+    ></app-line-graph-component>
+}

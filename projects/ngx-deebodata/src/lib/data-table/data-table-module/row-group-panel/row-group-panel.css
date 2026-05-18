@@ -1,0 +1,23 @@
+:host{
+    --accent-color:rgb(50, 50, 50);
+    --grid-color:rgb(199, 199, 199);
+    --pad-left-base: 33px;
+    --row-num-width: 75px;
+    --reg-font-size: 17px
+}
+
+.row-group-panel{
+    padding: 17px 11px;
+    border-bottom: 1px dotted var(--accent-color);
+}
+
+.open-panel{
+    box-shadow: 0 1px 3px 1px var(--grid-color);
+    -moz-box-shadow: 0 1px 3px 1px var(--grid-color);
+    -webkit-box-shadow: 0 1px 3px 1px var(--grid-color);
+}
+
+.panel-height{
+    min-height: 400px;
+    max-height: 400px;
+}

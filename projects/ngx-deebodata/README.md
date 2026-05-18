@@ -1,0 +1,142 @@
+# NgxDeebodata
+
+Commercial data grid with virtual scroll, integrated charts, row grouping, column resizing, toggle column visibility,  
+cell editing, tab accessibility, sorting with priority, and advanced filtering.
+
+# Licensing
+
+Commercial license - However, you can install this module and test 
+the full functionality when developing locally at **http://localhost:4200/**  
+  
+
+To deploy to any live url, you need to obtain a deployment license for each developer  
+on the project from https://deebodata.com/data-grid-checkout/angular
+
+## Usage
+
+**In the .ts component you want to use the data grid in**
+
+```
+import { NgxDeebodata } from 'ngx-deebodata';
+
+@Component({
+  selector: 'app-your-component',
+  imports: [ NgxDeebodata ],
+  templateUrl: './your-component.html',
+  styleUrl: './your-component.css'
+})
+```
+
+**In the template of the component**
+
+```
+<ngx-deebodata
+[editable]="true"
+[rowNumbers]="true"
+[data]="signalArrayOfObjects()"
+[color1]="'navy'"
+[color2]="'lightblue'"
+[primaryKey]="'employee_id'"
+[defRowHgt]="'50px'"
+[defGridHgt]="500"
+[licenseKey]="licenseKey"
+[pieGraphColors]="['red', 'blue', 'lightgray', 'orange', 'green']"
+[removePieCovers]="false"
+[altRowColor]="'#ececec'"
+[myColumnStyles]="[]"
+></ngx-deebodata>
+```
+
+**It's best to pass hex colors to color1, color2, pieGraphColors, & altRowColor, but css colors work too**  
+
+**Always pass a px value to defRowHgt like '50px'**
+
+**removePieCovers input can be a boolean or a string[] of column names where the pie graph should be uncovered**
+
+
+**To pass Column Symbols (Numeric columns only)**
+
+- In the .ts component you want to use the data grid in
+
+```
+import { ColumnSymbol, NgxDeebodata } from 'ngx-deebodata';
+```
+
+- in the exported class
+
+```
+symbols: ColumnSymbol[] = [{ column: "salary", symbol: "$" }];
+```
+
+- In the template of the component
+
+```
+<ngx-deebodata
+[data]="signalArrayOfObjects()"
+[myColumnSymbols]="symbols"
+></ngx-deebodata>
+```
+
+
+**To Hook Cell Edits**
+
+- In the .ts component you want to use the data grid in
+
+```
+import { CellEdit, NgxDeebodata } from 'ngx-deebodata';
+```
+
+- in the exported class
+
+```
+handleCellEdit(event: CellEdit) {//executes on cell edit if editable isn't false
+    /*CellEdit interface -> { value: any; row: any; column: string; }
+      row will either be the index of the edited cell in the initial data set
+      or, if a primaryKey is passed or detected, it will be the value of that 
+      primaryKey for the edited row*/
+    // console.log(event)
+}
+```
+
+- In the template of the component
+
+```
+<ngx-deebodata
+[data]="signalArrayOfObjects()"
+(cellEdit)="handleCellEdit($event)"
+></ngx-deebodata>
+```
+
+**To pass Column Styles**  
+
+The only css values processed now are color, font_size, font_weight, and text_decoration.
+
+- In the .ts component you want to use the data grid in
+
+```
+import { ColumnStyles, NgxDeebodata } from 'ngx-deebodata';
+```
+
+- in the exported class
+
+```
+columnStyles: ColumnStyles[] = [
+                { 
+                    column: "party", 
+                    css: [
+                        { value: "Republican", color: "red", font_size: "18px" },
+                        { value: "Democrat", color: "blue", font_size: "18px" },
+                        { value: "Independent", color: "green", font_size: "18px" },
+                    ] 
+                },
+            ]
+```
+
+- In the template of the component
+
+```
+<ngx-deebodata
+[data]="signalArrayOfObjects()"
+[myColumnStyles]="columnStyles"
+></ngx-deebodata>
+```

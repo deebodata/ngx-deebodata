@@ -1,0 +1,14 @@
+.deebo-dd-opt label{
+    width: 100%;
+    cursor: pointer;
+    display: inline-block;
+    vertical-align:middle
+}
+
+.deebo-dd-opt label:hover{
+    text-decoration: underline;
+}
+
+i.error-message{
+    font-size: 20px;
+}

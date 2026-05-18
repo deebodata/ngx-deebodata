@@ -1,0 +1,17 @@
+{
+  "name": "ngx-deebodata",
+  "version": "0.0.7",
+  "peerDependencies": {
+    "@angular/common": "^21.2.0",
+    "@angular/core": "^21.2.0",
+    "@angular/forms": "^21.2.0",
+    "@angular/platform-browser": "^21.2.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "sideEffects": false,
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://deebodata.com/angular-docs",
+  "keywords": ["grid", "data-grid", "datagrid", "virtual-scroll", "charts", "graphs", "grouping", "enterprise", "commercial"]
+}

@@ -1,0 +1,27 @@
+<div class="relly">
+    <div #ddSelect class="deebo-dd-select-hide deebo-dd-groupby" [class.deebo-dd-select]="optsOpen()">
+        @if(enableClear()){
+            <div class="deebo-dd-opt deebo-dd-groupby">
+                <button type="button" (click)="setGrouping(null)" class="v-mid no-btn" style="width: 100%;">
+                    <i class="material-icons error-message heavy v-mid" aria-hidden="false">close</i>&nbsp;<span class="md-text v-mid">Grouping</span>
+                </button>
+            </div>
+        }
+        @for(grp of groups(); track grp){
+            <div class="deebo-dd-opt deebo-dd-groupby">
+                <div>
+                    <label for="groupby{{grp}}">
+                        <input type="radio" name="groupby" id="groupby{{grp}}" (click)="setGrouping(grp)" (input)="setGrouping(grp)" /> 
+                        {{common.titleCase(grp)}}
+                    </label>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+<div class="deebo-dd-contain deebo-dd-groupby flex-center">
+    <button type="button" class="btn-deebo-dd deebo-dd-groupby no-btn" (click)="toggleGroupByOpts()" [disabled]="disableGB()">
+        <span>Group By</span>
+        <i class="material-icons" aria-hidden="false">{{optsOpen() ? "keyboard_arrow_up" : "keyboard_arrow_down"}}</i>
+    </button>
+</div>

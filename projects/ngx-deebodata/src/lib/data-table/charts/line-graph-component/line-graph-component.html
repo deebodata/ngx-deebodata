@@ -1,0 +1,59 @@
+<div #statOptsCont class="center stat-opt-contain">
+    @for(stat of statOpts; track stat){
+        <div [style.width]="statBtnWid" class="inline-b center">
+            <button class="no-btn stat-opt-btn" (click)="handleStatChange(stat)"
+            [class.stat-opt-btn-active]="selStat === stat">{{common.titleCase(stat)}}</button>
+        </div>
+    }
+</div>
+<div #auxOptsCont style="padding-bottom: 17px;">
+    <div class="qtr-wid center v-mid">
+        @if(valOpts().length){
+            <select [name]="'valSel' + common.elifyCol(column)" [id]="'valSel' + common.elifyCol(column)" [(ngModel)]="selDdVal"
+            (change)="handleValSelChange($any($event).target.value)" style="max-width: 80%">
+                @for(o of valOpts(); track o){
+                    <option [value]="o" [selected]="o === selDdVal">{{o}}</option>
+                }
+            </select>
+        }
+    </div><div class="qtr-wid center v-mid">
+        <select [name]="'timeDiff' + common.elifyCol(column)" [id]="'timeDiff' + common.elifyCol(column)" 
+        (change)="handleTimeDiffChange($any($event).target.value)" style="max-width: 88%" [(ngModel)]="selTDOpt">
+            <option value="-1" [selected]="selTDOpt === -1">All time</option>
+            @for(t of timeDiffOpts; track t.val){
+                <option [value]="t.val" [selected]="t.val === selTDOpt">{{t.text}}</option>
+            }
+        </select>
+    </div><div class="half-wid v-mid center dontwrap {{currentDeltaCls}}" [innerHTML]="currentDelta"></div>
+</div>
+<div #lgContain [id]="'lineGraph' + common.elifyCol(column)" class="inner-bg-contain" style="margin-bottom: 33px;">
+    <div #yAxis class="lg-n-marker-cont" [style.height]="totalHgt + 'px'">
+        @for(n of naddedtks(); track n.value; let i = $index){
+            <div class="bg-dep-var" [class.invisible]="n.value && n.value === maxYVal" [attr.data-number]="n.value"
+            [style.padding-bottom]="i < 4 ? (((i*4)+1) + 'px') : '0px'">
+                {{(n.value === '0') ? '' : n.value}}
+            </div>
+        }
+        @for(n of nmrks; track n){
+            <div class="lg-n-marker-h">{{n.value}}</div>
+        }
+    </div><div #lineGraph class="line-graph" [style.height]="totalHgt + 'px'">
+        @for(n of dtmrks; track n){
+            <div class="lg-dt-marker" [class.visible-marker]="n.visible" [style.left]="n.left">{{n.value}}</div>
+        }
+        @for(n of dtmrksH; track n){
+            <div class="lg-dt-marker-h" [class.visible-marker]="n.visible" [style.left]="n.left">{{n.value}}</div>
+        }
+        @if(lblTxt){
+            <div class="lg-lbl-x">{{lblTxt}}</div>
+        }
+        <canvas #lgCanvas class="lg-canvas" [height]="totalHgt"></canvas>
+        @for(p of plots(); track $index){
+            <div class="lg-plot lg-plot-opq" [attr.data-number]="p.number" (mouseenter)="showDotPlotInfo(p.date, p.number)" 
+            (mouseleave)="hideDotPlotInfo()" [ngStyle]="{'bottom': (p.bottom-4) + 'px', 'left': (p.left-4) + 'px' }">{{p.value}}</div>
+        }
+        @if(!plots().length){
+            <div class="flex-center lg-msg" [style.height]="totalHgt + 'px'"><div>{{graphMsg}}</div></div>
+        }
+    </div>
+</div>

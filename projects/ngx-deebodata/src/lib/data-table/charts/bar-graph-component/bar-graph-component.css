@@ -1,0 +1,156 @@
+:host{
+    --accent-color:rgb(50, 50, 50);
+    --grid-color:rgb(199, 199, 199);
+    --pad-left-base: 33px;
+    --row-num-width: 75px;
+    --reg-font-size: 17px
+}
+
+.inner-bg-contain{
+    position: relative;
+    box-sizing: border-box;
+}
+
+.inner-bg-contain::before{
+    top: 50%;
+    left: -48px;
+    font-size: x-large;
+    position: absolute;
+    display: block;
+    color: var(--grid-color);
+    content: attr(data-yaxis);
+    transform: rotate(-90deg);
+}
+
+.stat-opt-contain{
+    white-space: nowrap;
+    margin-bottom: 27px;
+}
+
+.stat-opt-btn{
+    width: 100%;
+    padding-bottom: 3px;
+    box-sizing: border-box;
+}
+
+.stat-opt-btn-active{
+    font-weight: bold;
+    border-bottom: 2px solid var(--grid-color);
+}
+
+.bar-graph-y-cols{
+    z-index: 5;
+    margin-left: 5px;
+    overflow: visible;
+    position: relative;
+    vertical-align: top;
+    box-sizing: border-box;
+    display: inline-block;
+    border-right: 1px solid var(--grid-color);
+}
+
+.bar-graph-real-vals{
+    position: relative;
+}
+
+.bar-graph-x-cols{
+    padding-top: 11px;
+    white-space: nowrap;
+    overflow-x: visible;
+    border-top: 1px solid var(--grid-color);
+}
+
+.bg-dep-var{
+    overflow: hidden;
+    height: 70px;
+    width: 100%;
+    display: flex;
+    padding: 0 5px;
+    font-size: 14px;
+    align-items: end;
+    font-weight: 500;
+    justify-content: right;
+    box-sizing: border-box;
+}
+
+.bg-dep-var div{
+    word-break:break-all;
+    color: var(--accent-color);
+}
+
+.bg-dep-var:first-of-type{
+    height: 17px !important;
+    position: relative;
+    overflow: visible !important;
+}
+
+.bg-dep-var:first-of-type::before{
+    top: 0;
+    overflow: visible;
+    position: absolute;
+    content: attr(data-number);
+    visibility: visible !important
+}
+
+.bg-dep-var:last-of-type{
+    overflow: visible !important;
+}
+
+.bg-dep-var:last-of-type::after{
+    content: attr(data-number);
+    margin-bottom: -7px;
+}
+
+.graph-actual-bar{
+    bottom: 0;
+    position: absolute;
+    align-items: center;
+    background: white;
+}
+
+.graph-actual-bar div{/*these divs are the actual colored bars*/
+    height: 0;
+    width: 80%;
+    margin: 0 auto;
+    background: #afafaf;
+    transition: height 0.3s ease-out;
+}
+
+.graph-actual-bar:hover{
+    z-index: 10;
+}
+
+.graph-actual-bar:hover::before{
+    width: 150px;
+    display: block;
+    font-weight: 500;
+    font-size: small;
+    white-space: nowrap;
+    background: white;
+    padding: 1px 2px 3px 2px;
+    content: attr(data-value);
+    border-radius: 3px;
+}
+
+ .bg-ind-var{
+    font-size: small;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    color: var(--accent-color);
+    transform: rotate(45deg);
+}
+
+.lbl-show{
+    overflow: visible !important;
+    transition: overflow 0.2s ease;
+}
+
+.bar-graph-x-label{
+    font-size: x-large;
+    font-weight: 500;
+    padding-top: 17px;
+    text-align: center;
+    overflow-x: hidden;
+}

@@ -1,0 +1,19 @@
+div{
+    box-sizing: border-box;
+    padding:7px 7px 0 2px
+}
+
+.half-wid{
+    padding: 0 !important;
+    margin: 11px 0 7px 0;
+}
+
+.half-wid span{
+    vertical-align: middle;
+}
+
+.vdh-loading{
+    text-align: center;
+    text-decoration: underline;
+    padding: 33px 0px 17px 0px;
+}

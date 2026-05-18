@@ -1,0 +1,33 @@
+:host{
+    --accent-color:rgb(50, 50, 50);
+    --grid-color:rgb(199, 199, 199);
+    --pad-left-base: 33px;
+    --row-num-width: 75px;
+    --reg-font-size: 17px
+}
+
+.lg-plot-opq{
+    opacity: 0;
+    background: white;
+}
+
+.lg-plot-opq:hover{
+    opacity: 1 !important;
+    background: var(--grid-color);
+    transition: opacity 0.2s ease;
+}
+
+.lg-canvas{
+    top: 0;
+    left: 0;
+    bottom: 0;
+    position: absolute;
+}
+
+.lg-msg{
+    top: 0; 
+    left: 0; 
+    right: 0;
+    position: absolute; 
+    color: var(--accent-color);
+}

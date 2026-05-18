@@ -1,0 +1,91 @@
+:host{
+    --accent-color:rgb(50, 50, 50);
+    --grid-color:rgb(199, 199, 199);
+    --pad-left-base: 33px;
+    --row-num-width: 75px;
+    --reg-font-size: 17px
+}
+
+.deebo-dd-select-hide{
+    opacity: 0;
+    max-height: 0;
+    min-width: 0;
+    max-width: 0;
+    overflow: hidden;
+}
+
+.deebo-dd-contain{
+    height:36px;
+    border:none;
+    padding: 0 7px;
+    border-radius:3px;
+    display: inline-flex;
+    background: white;
+    vertical-align: middle;
+    box-sizing: border-box;
+    border-bottom: none !important;
+    box-shadow:0 0 1px 1px var(--grid-color);
+    -moz-box-shadow:0 0 1px 1px var(--grid-color);
+    -webkit-box-shadow:0 0 1px 1px var(--grid-color);
+    font-family:'Roboto Condensed', Arial, Helvetica, sans-serif
+}
+
+.deebo-dd-selected{
+    position: relative;
+}
+
+.deebo-dd-contain button, .deebo-dd-contain label{
+    padding: 0;
+    overflow: hidden;
+    vertical-align: middle;
+}
+
+.deebo-dd-contain button span, .deebo-dd-contain button i{
+    vertical-align: middle;
+    font-size: var(--reg-font-size);
+}
+
+.deebo-dd-opt{
+    padding: 15px 7px;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+    border-bottom: 1px solid var(--grid-color);
+}
+
+.deebo-dd-opt button, .deebo-dd-opt div{
+    width: 100%;
+    text-align: left;
+    font-size: var(--reg-font-size);
+}
+
+.btn-deebo-dd i{
+    margin-left: 5px;
+}
+
+.deebo-dd-select{
+    right: 0;/*keeps export dd from flowing off page horiz*/
+    top: -150px;
+    z-index: 10;
+    border-radius: 3px;
+    position: absolute;
+    background: white;
+    opacity: 1 !important;
+    overflow: auto !important;
+    min-height: 120px;
+    white-space: normal;
+    min-width: 200px !important;
+    max-width: 275px !important;
+    max-height: 300px !important;
+    box-shadow:0 0 2px 2px var(--grid-color);
+    -moz-box-shadow:0 0 2px 2px var(--grid-color);
+    -webkit-box-shadow:0 0 2px 2px var(--grid-color);
+    transition: opacity 0.2s ease;
+}
+
+.deebo-dd-opt:hover{
+    background: #ebebeb;
+}
+
+.deebo-dd-opt:last-of-type{
+    border-bottom: none;
+}

@@ -1,0 +1,29 @@
+<div #statOptsCont class="center stat-opt-contain">
+    @for(stat of statOpts; track stat){
+        <div [style.width]="statBtnWid" class="inline-b center">
+            <button class="no-btn stat-opt-btn" (click)="handleStatChange(stat)"
+            [class.stat-opt-btn-active]="selStat() === stat">{{common.titleCase(stat)}}</button>
+        </div>
+    }
+</div>
+<div #innerGB class="inner-bg-contain">
+    <div #yAxis class="bar-graph-y-cols" [style.height]="((bgDepVarHgt*(numYPlots-1))+17) + 'px'">
+        @for(num of numTicks(); track $index){
+            <div class="bg-dep-var" [class.invisible]="num && num === maxYVal" [attr.data-number]="num">{{(num === '0') ? '' : num}}</div>
+        }
+    </div><div #barContainer class="bar-graph-real-vals">
+        @for(bar of barVals; track bar){
+            <div [ngStyle]="{'width': xLblWidth, 'left': bar.left}" 
+            class="graph-actual-bar" [attr.data-value]="bar.fullValue">
+                <div [ngStyle]="{'height': bar.height, 'background': bar.background}"></div>
+            </div>
+        }
+    </div>
+    <div #xValues class="bar-graph-x-cols">
+        @for(lbl of xLabels; track lbl){
+            <div class="bg-ind-var center" [style.width]="xLblWidth" (mouseenter)="lblMouseIn($event.target)" (mouseleave)="lblMouseOut($event.target)">
+            {{lbl}}</div>
+        }
+    </div>
+</div>
+<div #xLabel class="bar-graph-x-label"></div>

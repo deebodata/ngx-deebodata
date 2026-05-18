@@ -1,0 +1,53 @@
+<div class="relly chart-rel-contain">
+    <div #chartContain class="chart-contain" (scroll)="handleChartScroll($event)" [class.chart-contain-show]="chartsReady()" [style.height]="height">
+        <div class="relly" style="z-index: 10;">
+            <button type="button" #xChartsBtn class="abs-right no-btn" (click)="closeCharts()" style="background: white;">
+                <i class="material-icons error-message heavy" aria-hidden="false">close</i>
+            </button>
+        </div>
+        <div class="insights">
+            <h2 class="no-weight center" [innerHTML]="h2Text"></h2>
+            @for(row of iRows; track row; let r = $index){
+                <div class="insight-field-row">
+                    @for(col of row; track col; let i = $index){
+                        <div [id]="'insField' + common.elifyCol(col.column)" class="insight-field">
+                            @if(rowIsAboveFold().indexOf(r) > -1){
+                                <div style="width: 85%;">
+                                    <h3 class="semi-heavy" [class.h3-bg]="col.title.indexOf( ' by ') > -1">{{col.title}}</h3>
+                                    @if(dtCols.indexOf(col.column) > -1 && common.goodLs()){
+                                        <div class="lg-title-cont">
+                                            @if(numCols.length > 1){
+                                                @for(opt of numCols; track opt){
+                                                    <button type="button" class="btn-line-graph-opts" [class.btn-lg-sel]="opt === currNumColNm[col.column]"
+                                                    (click)="setLineGraphNumCol(r, col.column, opt)">
+                                                        {{opt + " by " + col.column}}
+                                                    </button>
+                                                }
+                                            } @else {
+                                                <span class="sp-line-graph-title">{{common.titleCase(currNumColNm[col.column]) + " by " + common.titleCase(col.column)}}</span>
+                                            }
+                                        </div>
+                                        @if(currNumColData[col.column]?.length){
+                                            <app-line-graph-component
+                                            [column]="col.column"
+                                            [data]="col.data"
+                                            [numCol]="currNumColNm[col.column]"
+                                            (title)="col.title = $event"
+                                            ></app-line-graph-component>
+                                        }
+                                    } @else {
+                                        <app-column-chart
+                                        [column]="col.column"
+                                        [colData]="col.data"
+                                        (bgTitle)="col.title = $event"
+                                        ></app-column-chart>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
