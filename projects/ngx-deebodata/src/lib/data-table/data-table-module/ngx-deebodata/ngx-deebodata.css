@@ -68,6 +68,7 @@ input[name=topLevelDataFilter]{
 
 .special-edit-container{
     z-index: 5;
+    width: 0 !important;
     height: 0 !important;
 }
 

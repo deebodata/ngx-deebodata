@@ -1,11 +1,3 @@
-:host{
-    --accent-color:rgb(50, 50, 50);
-    --grid-color:rgb(199, 199, 199);
-    --pad-left-base: 33px;
-    --row-num-width: 75px;
-    --reg-font-size: 17px
-}
-
 .lg-plot-opq{
     opacity: 0;
     background: white;

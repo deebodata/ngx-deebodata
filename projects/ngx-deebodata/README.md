@@ -1,16 +1,12 @@
 # NgxDeebodata
 
-Commercial data grid with virtual scroll, integrated charts, row grouping, column resizing, toggle column visibility,  
-cell editing, tab accessibility, sorting with priority, and advanced filtering.
+Commercial data grid with virtual scroll, integrated charts, row grouping, column resizing, toggle column visibility, cell editing, tab accessibility, sorting with priority, and advanced filtering.
 
 # Licensing
 
-Commercial license - However, you can install this module and test 
-the full functionality when developing locally at **http://localhost:4200/**  
-  
+Commercial license - However, you can install this module and test the full functionality when developing locally at **http://localhost:4200/**  
 
-To deploy to any live url, you need to obtain a deployment license for each developer  
-on the project from https://deebodata.com/data-grid-checkout/angular
+To deploy to any live url, you need to obtain a deployment license for each developer on the project from https://deebodata.com/data-grid-checkout/angular
 
 ## Usage
 
@@ -44,14 +40,18 @@ import { NgxDeebodata } from 'ngx-deebodata';
 [removePieCovers]="false"
 [altRowColor]="'#ececec'"
 [myColumnStyles]="[]"
+[forceGrouping]="['column_needs_grouping']"
 ></ngx-deebodata>
 ```
 
-**It's best to pass hex colors to color1, color2, pieGraphColors, & altRowColor, but css colors work too**  
+It's best to pass hex colors to **color1, color2, pieGraphColors, & altRowColor,** but css colors work too  
 
-**Always pass a px value to defRowHgt like '50px'**
+Always pass a **px** string value to defRowHgt like '50px'
 
-**removePieCovers input can be a boolean or a string[] of column names where the pie graph should be uncovered**
+**forceGrouping** - if a column you want grouping/dropdown filters for isn't getting that treatment automatically, try to force it with this - may or may not work 
+depending on how many distinct values the column has and other criteria 
+
+**removePieCovers** input can be a boolean or a string[] of column names where the pie graph should be uncovered
 
 
 **To pass Column Symbols (Numeric columns only)**
@@ -90,10 +90,11 @@ import { CellEdit, NgxDeebodata } from 'ngx-deebodata';
 
 ```
 handleCellEdit(event: CellEdit) {//executes on cell edit if editable isn't false
-    /*CellEdit interface -> { value: any; row: any; column: string; }
-      row will either be the index of the edited cell in the initial data set
-      or, if a primaryKey is passed or detected, it will be the value of that 
-      primaryKey for the edited row*/
+    /*CellEdit interface -> { value: any; row: any; column: string; idType: string; valueChanged: boolean; }
+    row will either be the 0-based index of the edited cell's parent row in the initial data set
+    or, if a primaryKey is passed or detected, it will be the value of that primaryKey for the edited 
+    row. Use idType (will be either "key" or "rowId") to know which one is emitting. Use valueChanged 
+    to know if an edit actually changed the value*/
     // console.log(event)
 }
 ```

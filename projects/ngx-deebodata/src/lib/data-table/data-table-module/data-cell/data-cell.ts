@@ -181,9 +181,11 @@ export class DataCellComponent {
           }
           return//not editable or was really a drag event, not click
       }
+      const cell = this.cellElem.nativeElement
+      if(this.cell.minimized)
+        return cell.blur()
       this.dataTableService.currEditCol = this.cell.column
       this.dataTableService.currEditIndex = parseInt(this.rowId.replace(/^dataTableRow/, ""))
-      const cell = this.cellElem.nativeElement
       const cellWid = parseInt(this.dataTableService.useColWid?.replace(/px/g, "") || "250")
       if(cell.getBoundingClientRect().right+cellWid >= this.dataTableService.tblRight){
           if(!noHScrl){
@@ -241,6 +243,26 @@ export class DataCellComponent {
       (event.relatedTarget && event.relatedTarget.classList.contains("edit-input")))
         return;
     this.execFreeEdit()
+  }
+
+  checkValEditOpts(event: any) {
+      event && event.preventDefault()
+      const opt = document.getElementsByClassName("edit-input-opt")[0]
+      const btn = <HTMLButtonElement>opt?.firstElementChild
+      if(opt && btn){
+        btn.focus()
+      } else {
+        const nxtCell: HTMLElement = <HTMLElement>this.cellElem.nativeElement?.parentElement?.nextElementSibling?.firstElementChild
+          if(nxtCell){
+            nxtCell.focus()
+          } else {
+            this.dataTableService.autoScrollOnEdit = true
+            this.dataTableService.scrollBodyForTabbing()
+            const nxtRowCell = <HTMLElement>document.querySelector("#dataTableRow" + (parseInt(this.rowId.replace(/^dataTableRow/, ""))+1) + " .data-cell:not(.col-header-minimized)")
+            if(nxtRowCell)
+              nxtRowCell.focus()
+          }
+      }
   }
 
   execFreeEdit() {

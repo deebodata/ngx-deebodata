@@ -1,6 +1,7 @@
 {
   "name": "ngx-deebodata",
-  "version": "0.0.7",
+  "version": "0.1.2",
+  "description": "A robust data grid solution with integrated charts, virtual scroll, row grouping, column resizing, toggle column visibility, cell editing, tab accessibility, sorting with priority, and advanced filtering.",
   "peerDependencies": {
     "@angular/common": "^21.2.0",
     "@angular/core": "^21.2.0",
@@ -13,5 +14,5 @@
   "sideEffects": false,
   "license": "SEE LICENSE IN LICENSE",
   "homepage": "https://deebodata.com/angular-docs",
-  "keywords": ["grid", "data-grid", "datagrid", "virtual-scroll", "charts", "graphs", "grouping", "enterprise", "commercial"]
+  "keywords": ["grid", "data-grid", "datagrid", "virtual-scroll", "charts", "graphs", "accessibility", "grouping", "enterprise", "commercial"]
 }

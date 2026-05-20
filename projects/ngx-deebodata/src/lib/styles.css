@@ -512,9 +512,11 @@ button:disabled,input:disabled,select:disabled{
     right: 0;
 }
 
-.edit-input-opt{
+.edit-input-opt button{
+    width: 100%;
     font-size: 15px;
     padding: 11px 0 11px 17px;
+    text-align: left !important;
 }
 
 .selfil-opt-contain, .edit-input-option-cont{

@@ -176,6 +176,7 @@ export class NgxDeebodata {
       @Input() removePieCovers: boolean|string[] = false
       @Input() editable: boolean = true;
       @Input() rowNumbers: boolean = true
+      @Input() forceGrouping: string[] = []
       @Output("cellEdit") cellEdit: EventEmitter<CellEdit> = new EventEmitter()
       @ViewChild("dataTable", { static: true }) dataTable!: ElementRef<HTMLElement>;
       @ViewChild("dataTableBody", { static: true }) dataTableBody!: ElementRef<HTMLElement>;
@@ -868,11 +869,12 @@ export class NgxDeebodata {
             if(dSet.size >= colData.filter( (d) => !!d ).length)
                 continue//means values are all unique so likely not dropdown material
             let arrFrmSet: any[] = []
-            dSet.forEach( (v: any) => { arrFrmSet.push(v) })                         
+            dSet.forEach( (v: any) => { arrFrmSet.push(v) }) 
+            const force = this.forceGrouping.indexOf(col) > -1;                       
             const doSels = dLen < 100 ? 2 : ((dLen >= 100 && dLen < 500) ? 10 : 15)
             const cantDoDD = arrFrmSet.some( (a) => (a && a.length > 40) )
             if(!cantDoDD && ((boolData || bitData) || (arrFrmSet.filter( (a) => !!a ).length > 0 && colData.every( (d) => !d || typeof d === "string" )))){
-                if(arrFrmSet.length > 1 && arrFrmSet.length <= doSels){
+                if((force && arrFrmSet.length <= 25) || (arrFrmSet.length > 1 && arrFrmSet.length <= doSels)){
                     this.swapColFilterToSelect(col, arrFrmSet.filter( (v: any) => (!!v && this.dataTableService.badStrings.indexOf(v) < 0) ))
                     cgb.push(col)
                 }
@@ -1399,6 +1401,10 @@ export class NgxDeebodata {
             clearTimeout(this.valEditFocusTo)
             this.valEditFocusTo = null
         }
+        if(this.validatedEditType === "text"){//text w/ limited values
+            this.currSelEditOpts = this.dataTableService.dataFilSrtTracker[this.dataTableService.currEditCol]["selDDVals"]?.
+            filter( (g: any) => g.value !== "(Select All)").map( (s: any) => ({ ...s, selected: s.value === cellData.value }))
+        }
         this.valEditFocusTo = setTimeout( () => {
             const rel = this.validatedEdit.nativeElement
             let el;
@@ -1417,15 +1423,11 @@ export class NgxDeebodata {
                     el.value = cellData.type === "date" ? new Date(cellData.value)?.toISOString().split("T")[0] : cellData.value;
                     setTimeout( () => { el.focus() })
                 }
-                if(elD){//text w/ limited values
-                    this.currSelEditOpts = this.dataTableService.dataFilSrtTracker[this.dataTableService.currEditCol]["selDDVals"]?.
-                    filter( (g: any) => g.value !== "(Select All)").map( (s: any) => ({ ...s, selected: s.value === cellData.value }))
-                }
                 rel.classList.remove("invisible")
                 this.fCellDragger.nativeElement.style.left = (Math.ceil(cbds.left-rbds.left) + cbds.width - 4) + "px";
                 this.fCellDragger.nativeElement.style.top = (Math.ceil(cbds.bottom-rbds.top) - 4) + "px"
             }
-        }, 10)
+        }, 50)
     }
 
     clearFCellDragger() {
@@ -1437,24 +1439,32 @@ export class NgxDeebodata {
 
     clearValidatedEdit(e?: any, clearDrag?: boolean) {
         if(this.listenToCellDraggerMouseMove)
-            return;
+            return this.killValEdit();
         if((e && e.type === "blur") || (e && e.type === "focus" && e.relatedTarget?.id === "fCellDragger")){
             setTimeout( () => { this.handleCellDraggerInit() })
         } else {
-            this.execValClear(clearDrag)
+            this.execValClear(e, clearDrag)
         }
     }
 
-     execValClear(clearDrag?: boolean) {
+     execValClear(e?: any, clearDrag?: boolean) {
         this.blurContEd()
-        this.dataTableService.currEditIndex = -1
-        this.dataTableService.currEditCol = ""
-        this.validatedEditType = ""
-        this.currSelEditOpts = []
-        this.validatedEdit.nativeElement.classList.add("invisible")
+        if(e && e.target && e.target.getAttribute("type") === "button"){//keep the cell
+            try{this.fCellDragger.nativeElement.focus()}catch(e){}
+        } else {
+            this.dataTableService.currEditIndex = -1
+            this.dataTableService.currEditCol = ""
+        }
+        this.killValEdit()
         if(clearDrag)
             this.clearCellDEdits()
         setTimeout( () => { this.dataTableService.clearAllFocused() })
+     }
+
+     killValEdit() {
+        this.validatedEditType = ""
+        this.currSelEditOpts = []
+        this.validatedEdit.nativeElement.classList.add("invisible")
      }
 
      handleDraggerMU(e: any) {
@@ -1525,9 +1535,7 @@ export class NgxDeebodata {
      }
 
      focusCellDragger() {
-        this.currSelEditOpts = []
-        this.validatedEditType = ""
-        this.validatedEdit.nativeElement.classList.add("invisible")
+        this.killValEdit()
         const cell= document.querySelector("#dataTableRow" + this.dataTableService.currEditIndex + " .data-cell-" + this.common.elifyCol(this.dataTableService.currEditCol))
         if(cell)
             cell.classList.add("dragger-cell-focused")
@@ -1541,10 +1549,20 @@ export class NgxDeebodata {
     handleFDragTab(e: any) {
         if(e && this.common.isTabKey(e)){
             const cell = document.getElementsByClassName("dragger-cell-focused")[0]
-            const nxtCell: HTMLElement = <HTMLElement>cell.parentElement?.nextElementSibling?.firstElementChild
-            if(cell && nxtCell){
+            if(cell){
+                const nxtCell: HTMLElement = <HTMLElement>cell.parentElement?.nextElementSibling?.firstElementChild
                 this.dataTableService.autoScrollOnEdit = true;
-                setTimeout( () => { nxtCell.focus() })
+                if(nxtCell){
+                    setTimeout( () => { nxtCell.focus(); this.dataTableService.autoScrollOnEdit = false; })
+                } else {
+                    const nxtRow = cell.parentElement?.parentElement?.nextElementSibling
+                    if(nxtRow){
+                        this.dataTableService.scrollBodyForTabbing()
+                        const nxtRowCell = <HTMLElement>document.querySelector("#" + nxtRow.id + " .data-cell:not(.col-header-minimized)")
+                        if(nxtRowCell)
+                            nxtRowCell.focus()
+                    }
+                }
             }
         }
     }
@@ -1639,6 +1657,7 @@ export class NgxDeebodata {
      execCellEdit(e: any, noBlur?: boolean, forceVal?: any/*from dropdown select, normally a string*/) {//{ column: this.cell.column, value: val }
         if(this.dataTableService.currEditIndex > -1){
             let cfDIdx;
+            let valueDidChange: boolean = true;
             const valEl = <HTMLInputElement>document.getElementsByClassName("edit-input")[0]
             let val = forceVal ? forceVal : (valEl ? valEl.value : e.value);
             if(val && !this.validateRawText(val, e.column, this.validatedEditType)){
@@ -1651,6 +1670,9 @@ export class NgxDeebodata {
             if(val && typeof val === "string" && this.validatedEditType === "number")
                 val = /\./g.test(val) ? parseFloat(val) : parseInt(val);
             const realProp: string = this.dataTableService.currEditCol || e.column;
+            const nwVal = this.dataTableService.mainData[this.dataTableService.currEditIndex][realProp]
+            if(nwVal === val)
+                valueDidChange = false;//still do everything, just tell them
             this.dataTableService.mainData[this.dataTableService.currEditIndex][realProp] = val;
             const item = this.dataTableService.mainData[this.dataTableService.currEditIndex]
             if(item){
@@ -1689,6 +1711,8 @@ export class NgxDeebodata {
                 value: val,
                 column: realProp,
                 row: rowKey,
+                idType: this.dataTableService.primaryKey ? "key" : "rowId",
+                valueChanged: valueDidChange,
             }
             this.cellEdit.emit(edit)
             if(!noBlur)
@@ -1830,11 +1854,11 @@ export class NgxDeebodata {
                 }
                 if(co2){
                     this.dataTableService.themeColor2 = co2
-                    rule2 = ".col-header, .data-table-footer, .btn-fil-comp{background-color: "+co2+" !important}"
+                    rule2 = ".col-header, .data-table-footer, .btn-fil-comp, .skip-to-options div{background-color: "+co2+" !important}"
                     const tblbxSh = "0 -1px 3px 1px ";
                     const tblFbxSh = "0 1px 3px -3px ";
                     if(this.dataTableService.mainDataLen){
-                        rule2 = ".col-header, .btn-fil-comp{background-color: "+co2+" !important}"
+                        rule2 = ".col-header, .btn-fil-comp, .skip-to-options div{background-color: "+co2+" !important}"
                         rule3 = ".data-table{ box-shadow: "+tblbxSh + co2+"; -webkit-box-shadow: "+tblbxSh + co2+"; -moz-box-shadow: "+tblbxSh + co2+"}"
                         rule6 = ".data-table-footer{background-color: "+co2+"; box-shadow: "+tblFbxSh + co2+"; -webkit-box-shadow: "+tblFbxSh + co2+"; -moz-box-shadow: "+tblFbxSh + co2+"}";
                     }

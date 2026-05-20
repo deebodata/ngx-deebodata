@@ -55,10 +55,11 @@
         @if (validatedEditType === 'text'){
             <div class="relly edit-input">
                 <div class="edit-input-option-cont">
-                    <div tabindex="0" (click)="execCellEdit($event, false, null)" class="edit-input-opt">-</div>
+                    <div class="edit-input-opt"><button type="button" class="no-btn" (click)="execCellEdit($event, false, null)">-</button></div>
                     @for (opt of currSelEditOpts; track opt.value) {
-                        <div tabindex="0" class="edit-input-opt" 
-                        (click)="execCellEdit($event, false, opt.value)">{{opt.value || "(Blank)"}}</div>
+                        <div class="edit-input-opt"><button type="button" class="no-btn" 
+                            (click)="execCellEdit($event, false, opt.value)">{{opt.value || "(Blank)"}}</button>
+                        </div>
                     }
                 </div>
             </div>

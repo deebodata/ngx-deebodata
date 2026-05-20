@@ -142,6 +142,14 @@ export class DataTableService {
                 return false;
             }
 
+            scrollBodyForTabbing(neg?: number) {
+                const dtb = document.getElementById("dataTableBody")
+                if(dtb){
+                    const scrlBy = parseInt(this.defltRHgt.replace(/[ ]?px/g, ""))
+                    dtb.scrollBy(0, ((neg || 1)*scrlBy))
+                }
+            }
+
             chartTopIsInView(column: string) {
                 const lg = document.getElementById("insField" + this.common.elifyCol(column))
                 if(lg){
