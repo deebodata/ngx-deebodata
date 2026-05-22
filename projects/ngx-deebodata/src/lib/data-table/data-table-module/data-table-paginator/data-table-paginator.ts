@@ -98,7 +98,7 @@ export class DataTablePaginator {
     showSkipToOptions(event: Event) {
         if(!this.showSkipTo)
             this.showSkipTo = true;
-        if(event && event.type === "click" && !this.listenToWindowSkipTo)
+        if(event && !this.listenToWindowSkipTo)
             setTimeout( () => { this.listenToWindowSkipTo = true })
     }
 

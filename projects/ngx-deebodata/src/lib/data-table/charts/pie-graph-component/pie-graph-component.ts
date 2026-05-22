@@ -140,7 +140,7 @@ export class PieGraphComponent {
                 this.rmNotes.push(rmNt)
                 continue
             }
-            const color = colors[props.indexOf(prop)]
+            const color = this.dataTableService.getColValColor(this.column, prop) || colors[props.indexOf(prop)];
             data.push({ label: prop, value: counts[prop], color: color })
             this.pieLbls.push({ text: this.common.sanitizeUi(prop).replace(/n_a/, "N/A"), background: color, percent: (strPct+"%") })
         }

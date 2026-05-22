@@ -1,12 +1,12 @@
 # NgxDeebodata
 
-Commercial data grid with virtual scroll, integrated charts, row grouping, column resizing, toggle column visibility, cell editing, tab accessibility, sorting with priority, and advanced filtering.
+Angular data grid with virtual scroll, integrated charts, row grouping, column resizing, toggle column visibility, cell editing, tab accessibility, sorting with priority, and advanced filtering. This package uses only basic @angular packages and rxjs as peer dependencies. 
 
 # Licensing
 
-Commercial license - However, you can install this module and test the full functionality when developing locally at **http://localhost:4200/**  
+Install this package and use the full functionality when developing locally at **http://localhost:4200/**  
 
-To deploy to any live url, you need to obtain a deployment license for each developer on the project from https://deebodata.com/data-grid-checkout/angular
+To deploy to any live url, you need to obtain a **deployment license** for each developer on the project from https://deebodata.com/data-grid-checkout/angular
 
 ## Usage
 
@@ -40,11 +40,12 @@ import { NgxDeebodata } from 'ngx-deebodata';
 [removePieCovers]="false"
 [altRowColor]="'#ececec'"
 [myColumnStyles]="[]"
+[myColumnValueColors]="[]"
 [forceGrouping]="['column_needs_grouping']"
 ></ngx-deebodata>
 ```
 
-It's best to pass hex colors to **color1, color2, pieGraphColors, & altRowColor,** but css colors work too  
+It's best to pass hex or rgb colors to **color1, color2, pieGraphColors, & altRowColor,** but css colors work too  
 
 Always pass a **px** string value to defRowHgt like '50px'
 
@@ -105,6 +106,40 @@ handleCellEdit(event: CellEdit) {//executes on cell edit if editable isn't false
 <ngx-deebodata
 [data]="signalArrayOfObjects()"
 (cellEdit)="handleCellEdit($event)"
+></ngx-deebodata>
+```
+
+**To pass Column Value Colors for Charts**  
+
+For a given column with limited distinct values (qualifies for grouping), give each value it's own color in the charts (pie, bar, line)
+
+- In the .ts component you want to use the data grid in
+
+```
+import { ColumnValueColors, NgxDeebodata } from 'ngx-deebodata';
+```
+
+- in the exported class
+
+```
+valueColors: ColumnValueColors[] = [
+    {
+      column: "party",
+      valueColors: [
+        { value: "Republican", color: "rgb(255, 0, 0)" },
+        { value: "Democrat", color: "rgb(0, 0, 255)" },
+        { value: "Independent", color: "rgb(0, 255, 0)" }
+      ]
+    }
+  ]
+```
+
+- In the template of the component
+
+```
+<ngx-deebodata
+[data]="signalArrayOfObjects()"
+[myColumnValueColors]="valueColors"
 ></ngx-deebodata>
 ```
 

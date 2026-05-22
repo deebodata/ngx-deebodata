@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, HostListener, Input, NgZone, Output, signal, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, Output, signal, ViewChild } from '@angular/core';
 import { CommonService } from '../../../services/common-service';
 import { DataTableService } from '../../../services/data-table-service';
 import { CommonModule } from '@angular/common';
@@ -25,7 +25,6 @@ export class LineGraphComponent {
     dtmrksH: any[] = []
     plots = signal<any[]>([])
     contScrollHgt: number = 0
-    buildingStat: boolean = false
     maxYVal: string = "0";
     statData: any[] = []
     valOpts = signal<any[]>([])
@@ -56,8 +55,7 @@ export class LineGraphComponent {
     @ViewChild("lgCanvas", { static: true }) lgCanvas!: ElementRef<HTMLCanvasElement>;
   
     constructor(public common: CommonService,
-                public dataTableService: DataTableService,
-                private _zone: NgZone,)
+                public dataTableService: DataTableService,)
      {}
 
     ngOnInit() {
@@ -109,7 +107,6 @@ export class LineGraphComponent {
       this.setUseableData(valData, this.selStat)
       setTimeout( () => { 
         this.drawLineGraph(this.useData); 
-        this._zone.run( () => { this.buildingStat = false } );
       })
     }
 
@@ -148,7 +145,6 @@ export class LineGraphComponent {
       if(this.selStat === stat && !resize)
         return;
       this.killPlots("Loading...")
-      this.buildingStat = true
       this.maxYVal = "0"
       this.selStat = stat
       if(!resize)
@@ -158,7 +154,6 @@ export class LineGraphComponent {
 
     handleValSelChange(selVal: string) {
       this.killPlots("Loading...")
-      this.buildingStat = true
       this.selDdVal = selVal
       this.maxYVal = "0"
       setTimeout( () => { this.buildLg() })
@@ -166,7 +161,6 @@ export class LineGraphComponent {
 
     handleTimeDiffChange(topt: number) {
       this.killPlots("Loading...")
-      this.buildingStat = true
       this.selTDOpt = topt
       this.maxYVal = "0"
       setTimeout( () => { this.buildLg() })
@@ -229,6 +223,7 @@ export class LineGraphComponent {
           const lg = this.lineGraph.nativeElement
           const par = this.lgContain.nativeElement
           const canvas = this.lgCanvas.nativeElement
+          const strODtCol = this.column.split(this.dataTableService.bgSep)[0]
           lg.style.width = ((par.getBoundingClientRect().width*0.92) -lmarg) + "px";
           canvas.width = ((par.getBoundingClientRect().width*0.92) -lmarg)
           const dtopts = {year: "2-digit",month: "2-digit", day: "numeric"}
@@ -482,6 +477,17 @@ export class LineGraphComponent {
                               }
                             }
                             skipped = 0
+                            const ownCol = this.dataTableService.getColValColor(strODtCol, this.selDdVal)
+                            if(ownCol){
+                              lgColor = ownCol
+                              useCol = lgColor
+                              if(lgColor.startsWith("#"))
+                                  useCol = this.common.hexToRgb(lgColor)
+                              else
+                                  useCol = this.common.getRgbParts(lgColor)
+                              if(useCol && typeof useCol === "object")
+                                  lgUndColor = "rgba("+useCol.r+", "+useCol.g+", "+useCol.b+", 0.2)";
+                            }
                             this.drawCanvasLineGraph(ctx, dx, dy, ptBef.left, (lgbds.height-ptBef.bottom), lgColor, lgUndColor)
                           }
                           mkPlts.push(pt)

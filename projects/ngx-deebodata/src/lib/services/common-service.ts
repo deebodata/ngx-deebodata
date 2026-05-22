@@ -198,6 +198,20 @@ export class CommonService {
             return false
         }
 
+        isShiftKey(event: any) {
+            if(event){
+                if (typeof event.key !== "undefined") {
+                    return event.key === 'Shift'
+                } else if (typeof event.keyIdentifier !== "undefined") {
+                    return event.keyIdentifier === 'Shift'
+                } else if (typeof event.keyCode !== "undefined") {
+                    return event.keyCode === 16
+                }
+                return false
+            }
+            return false
+        }
+
         keyCanSearch(event: any) {
             return (this.isSearchKey(event) ||
             this.isBackKey(event) ||

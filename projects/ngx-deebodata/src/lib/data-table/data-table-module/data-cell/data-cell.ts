@@ -252,15 +252,26 @@ export class DataCellComponent {
       if(opt && btn){
         btn.focus()
       } else {
-        const nxtCell: HTMLElement = <HTMLElement>this.cellElem.nativeElement?.parentElement?.nextElementSibling?.firstElementChild
+        const nxtCell: HTMLElement = this.dataTableService.shiftKeyDown === 1 ? <HTMLElement>this.cellElem.nativeElement?.
+        parentElement?.nextElementSibling?.firstElementChild : <HTMLElement>this.cellElem.nativeElement?.
+        parentElement?.previousElementSibling?.firstElementChild
           if(nxtCell){
             nxtCell.focus()
           } else {
-            this.dataTableService.autoScrollOnEdit = true
-            this.dataTableService.scrollBodyForTabbing()
-            const nxtRowCell = <HTMLElement>document.querySelector("#dataTableRow" + (parseInt(this.rowId.replace(/^dataTableRow/, ""))+1) + " .data-cell:not(.col-header-minimized)")
-            if(nxtRowCell)
-              nxtRowCell.focus()
+            const nxtRow = this.dataTableService.shiftKeyDown === 1 ? <HTMLElement>this.cellElem.nativeElement.parentElement?.parentElement?.nextElementSibling :
+            <HTMLElement>this.cellElem.nativeElement.parentElement?.parentElement?.previousElementSibling
+            if(nxtRow){
+                this.dataTableService.autoScrollOnEdit = true
+                this.dataTableService.scrollBodyForTabbing(this.dataTableService.shiftKeyDown)
+                const nxtRowCell = <HTMLElement>document.querySelector("#" + (nxtRow.id || "notHere") + " .data-cell:not(.col-header-minimized)")
+                if(nxtRowCell)
+                    nxtRowCell.focus()
+                else{
+                    const skip = document.getElementById("skipTo")
+                    if(skip)
+                        skip.focus()
+                }
+            }
           }
       }
   }

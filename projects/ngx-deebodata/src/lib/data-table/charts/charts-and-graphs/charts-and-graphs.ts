@@ -54,7 +54,7 @@ export class ChartsAndGraphs {
     }
   }
 
-  ngAfterViewInit() {
+  ngAfterContentInit() {
     setTimeout( () => { 
       let r = 0; let c = 0; let u = 0; let o = 0
       let useChartCols: string[] = [];

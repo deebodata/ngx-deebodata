@@ -19,6 +19,7 @@ import { RowNumber } from '../../../interfaces/row-number';
 import { ColumnStyles, ValueCss } from '../../../interfaces/column-styles';
 import { finalize, Subscription } from 'rxjs';
 import { ColumnSymbol } from '../../../interfaces/column-symbol';
+import { ColumnValueColors } from '../../../interfaces/column-value-colors';
 
 @Component({
   selector: 'ngx-deebodata',
@@ -114,6 +115,16 @@ export class NgxDeebodata {
         this.clearValidatedEdit()
     }
 
+    @HostListener('window:keydown.shift', ['$event'])
+    onWindowShiftKeydown(e: Event) {
+        this.dataTableService.shiftKeyDown = -1
+    }
+
+    @HostListener('window:keyup.shift', ['$event'])
+    onWindowShiftKeyup(e: Event) {
+        this.dataTableService.shiftKeyDown = 1
+    }
+
     constructor(public dataTableService: DataTableService, 
                 private tblDragService: TableDragService,
                 public common: CommonService,) {
@@ -172,6 +183,7 @@ export class NgxDeebodata {
       @Input() altRowColor: string = "";
       @Input() myColumnSymbols: ColumnSymbol[] = []
       @Input() myColumnStyles: ColumnStyles[] = []
+      @Input() myColumnValueColors: ColumnValueColors[] = []
       @Input() pieGraphColors: string[] = []
       @Input() removePieCovers: boolean|string[] = false
       @Input() editable: boolean = true;
@@ -210,6 +222,8 @@ export class NgxDeebodata {
               this.dataTableService.columnSymbols = [...this.myColumnSymbols]
           if(this.myColumnStyles)
               this.dataTableService.columnStyles = [...this.myColumnStyles]
+        if(this.myColumnValueColors)
+            this.dataTableService.columnValueColors = [...this.myColumnValueColors]
           if(this.pieGraphColors)
             this.dataTableService.pieGraphColors = [...this.pieGraphColors];
           this.dataTableService.removePieCovers = this.removePieCovers
@@ -1550,17 +1564,25 @@ export class NgxDeebodata {
         if(e && this.common.isTabKey(e)){
             const cell = document.getElementsByClassName("dragger-cell-focused")[0]
             if(cell){
-                const nxtCell: HTMLElement = <HTMLElement>cell.parentElement?.nextElementSibling?.firstElementChild
+                const nxtCell: HTMLElement = this.dataTableService.shiftKeyDown === 1 ? <HTMLElement>cell?.
+                parentElement?.nextElementSibling?.firstElementChild : <HTMLElement>cell?.
+                parentElement?.previousElementSibling?.firstElementChild;
                 this.dataTableService.autoScrollOnEdit = true;
                 if(nxtCell){
                     setTimeout( () => { nxtCell.focus(); this.dataTableService.autoScrollOnEdit = false; })
                 } else {
-                    const nxtRow = cell.parentElement?.parentElement?.nextElementSibling
+                    const nxtRow = this.dataTableService.shiftKeyDown === 1 ? cell.parentElement?.parentElement?.nextElementSibling :
+                    cell.parentElement?.parentElement?.previousElementSibling
                     if(nxtRow){
-                        this.dataTableService.scrollBodyForTabbing()
-                        const nxtRowCell = <HTMLElement>document.querySelector("#" + nxtRow.id + " .data-cell:not(.col-header-minimized)")
+                        this.dataTableService.scrollBodyForTabbing(this.dataTableService.shiftKeyDown)
+                        const nxtRowCell = <HTMLElement>document.querySelector("#" + (nxtRow.id || "notHere") + " .data-cell:not(.col-header-minimized)")
                         if(nxtRowCell)
                             nxtRowCell.focus()
+                        else{
+                            const skip = document.getElementById("skipTo")
+                            if(skip)
+                                skip.focus()
+                        }
                     }
                 }
             }

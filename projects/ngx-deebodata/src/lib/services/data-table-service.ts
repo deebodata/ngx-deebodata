@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { Subject } from 'rxjs';
 import { ColumnSymbol } from '../interfaces/column-symbol';
 import { ColumnStyles } from '../interfaces/column-styles';
+import { ColumnValueColors } from '../interfaces/column-value-colors';
 
 @Injectable({
   providedIn: 'root'
@@ -45,6 +46,7 @@ export class DataTableService {
             autoScrollOnEdit: boolean = false
             listenToCloseExportOpts = false;
             listenToCloseGroupByOpts = false;
+            shiftKeyDown: number = 1;
             currGrouping: Subject<any> = new Subject()
             closeExportOpts: Subject<boolean> = new Subject()
             closeGroupByOpts: Subject<boolean> = new Subject()
@@ -70,12 +72,19 @@ export class DataTableService {
 
             columnStyles: ColumnStyles[] = []
 
+            columnValueColors: ColumnValueColors[] = []
+
             pieGraphColors: string[] = []
             removePieCovers: boolean|string[] = false
 
             getColumnStyle(col: string): string {
                 const foundCol = this.columnStyles.find( c => c.column === col)?.column
                 return foundCol ? (" data-cell-" + foundCol + "-") : "";
+            }
+
+            getColValColor(column: string, value: string) {
+                return this.columnValueColors.filter( c => c.column === column)[0]?.
+                valueColors.find( vc => vc.value === value)?.color;
             }
 
             isLocalHost(andSet: boolean): boolean {
@@ -142,11 +151,11 @@ export class DataTableService {
                 return false;
             }
 
-            scrollBodyForTabbing(neg?: number) {
+            scrollBodyForTabbing(multBy: number) {
                 const dtb = document.getElementById("dataTableBody")
                 if(dtb){
                     const scrlBy = parseInt(this.defltRHgt.replace(/[ ]?px/g, ""))
-                    dtb.scrollBy(0, ((neg || 1)*scrlBy))
+                    dtb.scrollBy(0, (multBy*scrlBy))
                 }
             }
 

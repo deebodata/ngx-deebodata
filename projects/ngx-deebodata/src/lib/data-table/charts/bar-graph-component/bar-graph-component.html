@@ -12,7 +12,7 @@
             <div class="bg-dep-var" [class.invisible]="num && num === maxYVal" [attr.data-number]="num">{{(num === '0') ? '' : num}}</div>
         }
     </div><div #barContainer class="bar-graph-real-vals">
-        @for(bar of barVals; track bar){
+        @for(bar of barVals; track bar.id){
             <div [ngStyle]="{'width': xLblWidth, 'left': bar.left}" 
             class="graph-actual-bar" [attr.data-value]="bar.fullValue">
                 <div [ngStyle]="{'height': bar.height, 'background': bar.background}"></div>

@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, Input, ViewChild, Output, HostListener, signal } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, ViewChild, Output, HostListener, signal, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonService } from '../../../services/common-service';
 import { DataTableService } from '../../../services/data-table-service';
 import { CommonModule } from '@angular/common';
@@ -7,7 +7,8 @@ import { CommonModule } from '@angular/common';
   selector: 'app-bar-graph-component',
   imports: [CommonModule],
   templateUrl: './bar-graph-component.html',
-  styleUrls: ['./bar-graph-component.css', '../../../styles.css']
+  styleUrls: ['./bar-graph-component.css', '../../../styles.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BarGraphComponent {
 
@@ -21,7 +22,6 @@ export class BarGraphComponent {
   xLblWidth: string= ""
   xLabels: string[] = []
   maxBarWid: number = 90
-  buildingStat: boolean = false
   maxYVal: string = "0";
   statData: any[] = []
   selStat = signal<string>("avg")
@@ -42,14 +42,11 @@ export class BarGraphComponent {
 
   constructor(public common: CommonService,
               private dataTableService: DataTableService,
+              private _cd: ChangeDetectorRef,
   ){ }
 
   ngOnInit() {
     this.buildBarGraphWithTwoCols(this.selStat())
-  }
-  
-  ngAfterContentInit() {
-    setTimeout( () => { this.sizeUpBgDims() })
   }
 
   sizeUpBgDims() {
@@ -125,7 +122,6 @@ export class BarGraphComponent {
       this.xLabel.nativeElement.textContent = this.common.sanitizeUi(this.common.titleCase(strCol))
       this.buildYAxisBGVals(max)
       setTimeout( () => { this.buildBGBars(this.statData, max, sym) })
-      setTimeout( () => { this.buildingStat = false }, 500)
   }
 
   buildBGBars(data: any[], max: number, sym: any) {
@@ -140,9 +136,12 @@ export class BarGraphComponent {
       if(this.dataTableService.themeColor1 && whiteTxt.indexOf(this.dataTableService.themeColor1) < 0)
           background = this.dataTableService.themeColor1;
       const useIncr = Math.min(this.maxBarWid, (Math.floor((this.innerGB.nativeElement.getBoundingClientRect().width-offY)/this.xLabels.length)))
+      const bgCols = this.column.split(this.dataTableService.bgSep)
+      const strCol = bgCols[0]
       for(i; i < len; i++){
         const item = data[i]
         const bhgt = item["y"]/max;
+        const ownCol = this.dataTableService.getColValColor(strCol, item["x"])
         const strVal = item["y"].toLocaleString(undefined, {maximumFractionDigits: 2})
         let symb4 = ""
         let symaf = ""
@@ -154,7 +153,7 @@ export class BarGraphComponent {
               symaf = sym
         }
         const fVal = item["x"] + ': ' + symb4 + strVal + symaf;
-        const bv = { id: item["x"], left: ((i*useIncr) + "px"), heightVal: bhgt, height: "0px", fullValue: fVal, numValue: strVal, background: background}
+        const bv = { id: item["x"], left: ((i*useIncr) + "px"), heightVal: bhgt, height: "0px", fullValue: fVal, numValue: strVal, background: (ownCol || background)}
         this.barVals.push(bv);
       }
       this.handleBGBarHgts(data)
@@ -162,27 +161,20 @@ export class BarGraphComponent {
 
   handleBGBarHgts(data: any[]) {
     let i = 0
-    let show = false
     const len = data.length
-    const ybds = this.yAxis.nativeElement.getBoundingClientRect()
+    const ybds = this.yAxis.nativeElement.getBoundingClientRect();
     const maxHgt = ybds.height
-    const cont = document.getElementById("insField" + this.common.elifyCol(this.column))
-    const cBds = cont?.getBoundingClientRect()
-    const insTop = document.getElementsByClassName("chart-contain-show")[0]?.scrollTop || 0;
-    if(cBds && (cBds.bottom-(cBds.height/2)) < (this.dataTableService.tblTop+insTop+this.dataTableService.dTblHeight))
-      show = true;
-    if(show){
+    setTimeout( () => { 
       for(i; i < len; i++){
         const item = data[i]
         const xvalue = item["x"]
         const bv = this.barVals.find( b => b.id === xvalue)
-        if(bv){
-          setTimeout( () => { 
-            bv.height = (Math.ceil(bv.heightVal*maxHgt) + "px")
-          }, 250)
-        }
+        if(bv)
+          bv.height = (Math.ceil(bv.heightVal*maxHgt) + "px")
       }
-    }
+      this.sizeUpBgDims()
+      this._cd.detectChanges()
+    }, 100)
   }
 
   buildYAxisBGVals(max: number) {
@@ -212,18 +204,17 @@ export class BarGraphComponent {
   handleStatChange(stat: string, resize?: boolean) {
     if(this.selStat() === stat && !resize)
       return;
-    this.buildingStat = true
     this.maxYVal = "0"
     this.selStat.set(stat)
     this.numTicks.set([])
     this.barVals = []
     this.xLabels = []
     this.statData = []
+    this._cd.detectChanges()
     if(!resize)
       this.title.emit(this.common.titleCase(stat) + " " + this.titleTrail);
     setTimeout( () => { 
       this.buildBarGraphWithTwoCols(stat);
-      setTimeout( () => { this.sizeUpBgDims() }) 
     })
   }
 
