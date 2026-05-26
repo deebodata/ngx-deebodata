@@ -11,9 +11,9 @@
                 <div class="insight-field-row">
                     @for(col of row; track col; let i = $index){
                         <div [id]="'insField' + common.elifyCol(col.column)" class="insight-field">
-                            @if(rowIsAboveFold().indexOf(r) > -1){
-                                <div style="width: 85%;">
-                                    <h3 class="semi-heavy" [class.h3-bg]="col.title.indexOf( ' by ') > -1">{{col.title}}</h3>
+                            <div style="width: 85%;">
+                                <h3 class="semi-heavy" [class.h3-bg]="col.title.indexOf( ' by ') > -1">{{col.title}}</h3>
+                                @if(rowIsAboveFold().indexOf(r) > -1){
                                     @if(dtCols.indexOf(col.column) > -1 && common.goodLs()){
                                         <div class="lg-title-cont">
                                             @if(numCols.length > 1){
@@ -42,8 +42,8 @@
                                         (bgTitle)="col.title = $event"
                                         ></app-column-chart>
                                     }
-                                </div>
-                            }
+                                }
+                            </div>
                         </div>
                     }
                 </div>

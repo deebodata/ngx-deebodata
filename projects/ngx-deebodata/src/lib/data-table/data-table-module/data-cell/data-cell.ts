@@ -95,8 +95,11 @@ export class DataCellComponent {
     const cell = this.cellElem.nativeElement
     if(this.cell.text && !cell.textContent)
       cell.textContent = this.cell.text
-    if(this.cell.html && !cell.innerHTML)
+    if(this.cell.html && !cell.innerHTML){
       cell.innerHTML = this.cell.html
+      if(/ \<a/g.test(this.cell.html) || /a\> /g.test(this.cell.html))
+        cell.style.display = "inline-block"
+    }
     this.ready = true
     if(this.cell.html){
       setTimeout( () => {

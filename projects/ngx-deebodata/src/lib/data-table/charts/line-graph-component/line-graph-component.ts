@@ -96,18 +96,39 @@ export class LineGraphComponent {
           valData = oData.filter( v => v["dtColumn"].getTime() >= cutoff )
         }catch(e){}
       }
-      const dSet = new Set(valData.filter( v => true).sort( (a, b) => a["dtColumn"] > b["dtColumn"] ? 1 : -1 ).map( (d) => JSON.stringify(d["dtColumn"]) ))//unique dates
-      dSet.forEach( (v) => { 
-        const pdt = JSON.parse(v)
-        if(typeof pdt === "string")
-          this.uDates.push(this.common.coerceDate(pdt)) 
-        else
-          this.uDates.push(pdt)
-      });
+      const uArr = Array.from(new Set(valData.filter( v => true).sort( (a, b) => a["dtColumn"] > b["dtColumn"] ? 1 : -1 ).map( (d) => JSON.stringify(d["dtColumn"]) )))//unique dates
+      this.uDates = this.sizeDownUDates(uArr)
       this.setUseableData(valData, this.selStat)
       setTimeout( () => { 
         this.drawLineGraph(this.useData); 
       })
+    }
+
+    sizeDownUDates(arrFromDset: any[]) {
+      let u = 0
+      let uDates = []
+      let udlen = arrFromDset.length
+      if(udlen > 50){//trim it down
+          arrFromDset = arrFromDset.filter( function(a, ind) { return ind === 0 || ind === (udlen-1) || ind%10 === 0 })
+          udlen = arrFromDset.length
+          if(udlen > 35){
+              arrFromDset = arrFromDset.filter( function(a, ind) { return ind === 0 || ind === (udlen-1) || ind%5 === 0 })
+              udlen = arrFromDset.length
+              if(udlen > 25){
+                  arrFromDset = arrFromDset.filter( function(a, ind) { return ind === 0 || ind === (udlen-1) || ind%4 === 0 })
+                  udlen = arrFromDset.length
+              }
+          }
+      }
+      for(u; u < udlen; u++){
+          const v = arrFromDset[u]
+          const pdt = JSON.parse(v)
+          if(typeof pdt === "string")
+              uDates.push(this.common.coerceDate(pdt)) 
+          else
+              uDates.push(pdt)
+      }
+      return uDates;
     }
 
     getYTDNumDays(dtmax: any) {

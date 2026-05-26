@@ -1,7 +1,7 @@
 {
   "name": "ngx-deebodata",
-  "version": "0.1.6",
-  "description": "All-in-one data grid and charts solution that solves big data analysis with virtual scroll, row grouping, column resizing, re-ordering, column hiding, cell editing, tab accessibility, sorting with priority, and advanced filtering.",
+  "version": "0.2.2",
+  "description": "Angular data grid and charts solution that solves big data analysis with virtual scroll, row grouping, column resizing, re-ordering, column hiding, cell editing, tab accessibility, sorting with priority, and advanced filtering.",
   "peerDependencies": {
     "@angular/common": "^21.2.0",
     "@angular/core": "^21.2.0",
@@ -15,5 +15,27 @@
   "sideEffects": false,
   "license": "SEE LICENSE IN LICENSE",
   "homepage": "https://deebodata.com/ngx-deebodata-documentation/ngx-deebodata",
-  "keywords": ["grid", "data-grid", "angular", "data", "datagrid", "virtual-scroll", "charts", "graphs", "accessibility", "grouping", "enterprise"]
+  "keywords": [
+    "grid",
+    "data-grid",
+    "angular",
+    "data",
+    "datagrid",
+    "angular-grid",
+    "data-table",
+    "datatable",
+    "sorting",
+    "angular-table",
+    "virtual-scroll",
+    "charts",
+    "graphs",
+    "bar-graph",
+    "line-graph",
+    "row-grouping",
+    "accessibility",
+    "grouping",
+    "customizable",
+    "feature-rich",
+    "high-performance"
+  ]
 }

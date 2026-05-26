@@ -3,7 +3,7 @@
     @if(!shouldUncover()){<div #pieLayover class="pie-layover"></div>}
 </div>
 <div class="chart-label-cont">
-    @for(lbl of pieLbls; track lbl){
+    @for(lbl of pieLbls(); track lbl){
         <div class="pie-piece-label">
             <span [attr.data-percent]="lbl.percent">{{lbl.text}}</span>
             <label class="pie-piece-label-sq" [style.background]="lbl.background"></label>

@@ -1,14 +1,3 @@
-.lg-plot-opq{
-    opacity: 0;
-    background: white;
-}
-
-.lg-plot-opq:hover{
-    opacity: 1 !important;
-    background: var(--grid-color);
-    transition: opacity 0.2s ease;
-}
-
 .lg-canvas{
     top: 0;
     left: 0;

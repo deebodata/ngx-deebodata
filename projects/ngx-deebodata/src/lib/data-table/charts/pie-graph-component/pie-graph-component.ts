@@ -1,4 +1,4 @@
-import { Component, Input, ViewChild, ElementRef, HostListener } from '@angular/core';
+import { Component, Input, ViewChild, ElementRef, HostListener, signal } from '@angular/core';
 import { CommonService } from '../../../services/common-service';
 import { DataTableService } from '../../../services/data-table-service';
 import { CommonModule } from '@angular/common';
@@ -18,7 +18,7 @@ export class PieGraphComponent {
   }
 
   rmNotes: any[] = []
-  pieLbls: any[] = []
+  pieLbls = signal<any[]>([])
   @Input() data: any = null
   @Input() column: string = ""
   @Input() uncoverPie: boolean|string[] = false
@@ -124,6 +124,7 @@ export class PieGraphComponent {
             (this.dataTableService.themeColor2 || "black")]
         const numNa = counts[na]
         const rmNaPer = 65
+        let lbls: any[] = []
         const perNa = numNa ? ((numNa/dTotal)*100) : 0
         const useTotal = (!isBool && numNa && (perNa > rmNaPer)) ? (dTotal-numNa) : dTotal
         for(const prop in counts){
@@ -142,8 +143,9 @@ export class PieGraphComponent {
             }
             const color = this.dataTableService.getColValColor(this.column, prop) || colors[props.indexOf(prop)];
             data.push({ label: prop, value: counts[prop], color: color })
-            this.pieLbls.push({ text: this.common.sanitizeUi(prop).replace(/n_a/, "N/A"), background: color, percent: (strPct+"%") })
+            lbls.push({ text: this.common.sanitizeUi(prop).replace(/n_a/, "N/A"), background: color, percent: (strPct+"%") })
         }
+        this.pieLbls.set([...lbls])
     
         let n = 0
         let total = 0;
