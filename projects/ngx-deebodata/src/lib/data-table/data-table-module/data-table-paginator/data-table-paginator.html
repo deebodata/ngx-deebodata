@@ -9,7 +9,7 @@
         }
     </div><div class="qtr-wid right">
         <label class="skip-lbl" for="skipTo">Jump To Row</label>&nbsp;&nbsp;<div class="skip-to-contain"><input type="number" min="1" [attr.max]="totalRowStr"
-        name="skipTo" id="skipTo" #skipTo placeholder="Jump to..." (input)="handleSkipToPageOnKeyup($event, $any($event).target.value)"
+        name="skipTo" id="skipTo" #skipTo placeholder="Jump to..." (input)="handleSkipToPageOnKeyup($event, $any($event).target.value)" [(ngModel)]="skipToVal"
         (focus)="showSkipToOptions($event)" (click)="showSkipToOptions($event)" (blur)="handleSkipToPageOnKeyup($event, $any($event).target.value)" 
         (keyup.enter)="handleSkipToPageOnKeyupEnter($any($event).target.value)" (keyup)="handleSkipToPageOnKeyup($event, $any($event).target.value)" 
         (mouseup)="common.unbindMouseEvent($event)" [disabled]="disableJump" />

@@ -587,7 +587,7 @@ export class NgxDeebodata {
           return nData
       }
 
-      setRowSelChecksPlacement() {
+      setRowSelChecksPlacement(setRowOnWait?: boolean) {
         let i = 0
         const radd = 12
         const els = document.getElementsByClassName("select-row-check")
@@ -614,8 +614,18 @@ export class NgxDeebodata {
                 chk.classList.add("hide")
             }
         }
-        this.setRowNumbers()
+        if(setRowOnWait){
+            if(this.rowNTO){
+                clearTimeout(this.rowNTO)
+                this.rowNTO = null
+            }
+            this.rowNTO = setTimeout(() => { this.setRowNumbers(); }, 250)
+        } else {
+            this.setRowNumbers()
+        }
     }
+
+    rowNTO: any = null;
 
     setRowNumbers() {
         const rlen = this.rows.length
@@ -1395,8 +1405,7 @@ export class NgxDeebodata {
             const tbl = this.dataTableBody.nativeElement
             const defNum = parseInt(this.dataTableService.defltRHgt.replace(/[ ]?px/g, ""))
             tbl.scrollTop = ind*defNum;
-            this._cd.markForCheck();
-            setTimeout( () => { this.setRowSelChecksPlacement(); this._cd.detectChanges(); })
+            setTimeout( () => { this.setRowSelChecksPlacement(true); })
         }
     }
 

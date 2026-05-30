@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, Input, Output, SimpleChanges, HostListener, input, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, SimpleChanges, HostListener, input } from '@angular/core';
 import { DataTableService } from '../../../services/data-table-service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -24,8 +24,7 @@ export class DataTablePaginator {
 
     constructor(public dataTableService: DataTableService,
                 public tblDragService: TableDragService,
-                public common: CommonService,
-                public skipTo: ElementRef,) {
+                public common: CommonService,) {
 
     }
 
@@ -33,6 +32,7 @@ export class DataTablePaginator {
     isKeying = false
     totalRowStr = "";
     rowinating = false
+    skipToVal: string = ""
     jumpableRows: any[] = []
     listenToWindowSkipTo = false
     showSkipTo: boolean = false;
@@ -70,7 +70,7 @@ export class DataTablePaginator {
     setUpHandleSkipToPage(val: any) {//mock option click
         if(val){
             const useVal = Math.min(val, this.totalRows)
-            this.skipTo.nativeElement.value = useVal
+            this.skipToVal = useVal.toString()
             this.handleSkipToPage(useVal)
         } else {
           this.closeSkipOpts()
