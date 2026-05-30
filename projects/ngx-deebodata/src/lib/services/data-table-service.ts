@@ -395,6 +395,10 @@ export class DataTableService {
                         if(ddVals && ddVals.length){
                             const chkdVs = ddVals.filter( (d: any) => d.checked ).
                             map( (v: any) => typeof v.value === "string" ? v.value.toLocaleLowerCase() : v.value )
+                            if(chkdVs.length === ddVals.length){
+                                chkdVs.push(null)
+                                chkdVs.push("")
+                            }
                             return chkdVs.indexOf(colVal) > -1
                         } else {
                             if(typeof colVal === "string")
@@ -410,6 +414,10 @@ export class DataTableService {
                             if(ddVals && ddVals.length){
                                 const chkdVs = ddVals.filter( (d: any) => d.checked ).
                                 map( (v: any) => typeof v.value === "string" ? v.value.toLocaleLowerCase() : v.value )
+                                if(chkdVs.length === ddVals.length){
+                                    chkdVs.push(null)
+                                    chkdVs.push("")
+                                }
                                 return chkdVs.indexOf(colVal) > -1
                             } else {
                                 if(this.common.isADateObject(filterVal) && this.common.isADateObject(colVal))

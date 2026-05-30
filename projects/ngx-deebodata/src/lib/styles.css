@@ -639,13 +639,6 @@ input.edit-input{
     justify-content: center !important
 }
 
-.data-cell img{
-    max-width: 100px;
-    height: auto;
-    margin: 0;
-    vertical-align: middle;
-}
-
 .cell-og-link{
     line-height: 0;
     visibility: hidden;

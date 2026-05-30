@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { CommonService } from '../../../services/common-service';
 import { DataTableService } from '../../../services/data-table-service';
 import { CommonModule } from '@angular/common';
@@ -28,7 +28,7 @@ export class ColumnChart {
   numAvg: number = 0
   modeHtml: string = ""
   tdivHtml: string = ""
-  numValDistMsg = ""
+  numValDistMsg = signal<string>("")
   numLen: number = 0
   symCls: string = ""
   symAttr: string = ""
@@ -56,7 +56,7 @@ export class ColumnChart {
   }
 
   setDistMsg(event: string) {
-    this.numValDistMsg = event
+    this.numValDistMsg.set(event)
   }
 
   buildDataInsights() {
@@ -116,7 +116,7 @@ export class ColumnChart {
         this.max = Math.max(...(this.tdivHtml ? numsOnly.filter( (n, ind) => ind < (numsOnly.length-1) ) : numsOnly)).
         toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: (isCurr ? 2 : 0) });
         if(this.numLen && this.numLen < this.numArrMax)
-            this.numValDistMsg = "Building " + this.common.sanitizeUi(this.common.titleCase(this.column)) + " value distribution..."
+            this.numValDistMsg.set("Building " + this.common.sanitizeUi(this.common.titleCase(this.column)) + " value distribution...")
     } else {
         const dSet =new Set(this.colData)
         let arrFrmSet: any[] = []

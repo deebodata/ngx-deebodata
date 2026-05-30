@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, Input, NgZone, Output, signal, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, Output, signal, ViewChild } from '@angular/core';
 import { CommonService } from '../../../services/common-service';
 import { DataTableService } from '../../../services/data-table-service';
 import { CommonModule } from '@angular/common';
@@ -14,7 +14,7 @@ export class NumValueDistroComponent {
   nmrksVdn: any[] = []
   nmrksVdnH = signal<any[]>([])
   nColValBars = signal<any[]>([])
-  avgColValBar: any = null
+  avgColValBar = signal<any>(null)
   naddedtks: any = []
   @Input() title: string = ""
   @Input() column: string = ""
@@ -25,7 +25,7 @@ export class NumValueDistroComponent {
 
   constructor(public common: CommonService,
               public dataTableService: DataTableService,
-              private _zone: NgZone,)
+              private _cd: ChangeDetectorRef,)
  {}
 
  ngOnInit() {
@@ -81,6 +81,7 @@ export class NumValueDistroComponent {
             this.nmrksVdnH.set([...nHmck])
             if(!this.naddedtks.length)
                 return;
+            this._cd.markForCheck()
             setTimeout( () => {
                 try{
                     let r =0
@@ -97,6 +98,7 @@ export class NumValueDistroComponent {
                     const mrrgt = (Math.ceil(space/divby))//divide space up by count-1 because last gets no marg right
                     for(r; r < mrlen; r++)
                         this.nmrksVdn[r].left = Math.floor((mrrgt*r)) + "px";
+                    this._cd.detectChanges();
                     setTimeout( () => {
                         const xrange = Math.min((mrks[mrlen-1].getBoundingClientRect().right - pbds.left) - (Math.ceil(lastdtdv.width/2)+halfPlot+1))
                         for(hd; hd < hmrlen; hd++){
@@ -167,10 +169,11 @@ export class NumValueDistroComponent {
                             const useavg = avg.toLocaleString(undefined, {maximumFractionDigits: maxDigs})
                             const aplft = findNLft(useavg, true)
                             if((aplft && aplft !== 0) && !isNaN(aplft))
-                                this._zone.run( () => { this.avgColValBar = { number: useavg, left: (Math.floor(aplft) + "px") } } )
+                                this.avgColValBar.set({ number: useavg, left: (Math.floor(aplft) + "px") })
                         }
                         /*avg marker */
                         this.doneLoading.emit(title?.replace(/Building /g, "").replace(/distribution\.\.\./g, "distribution"))
+                        this._cd.detectChanges()
                     }, 250)
                 }catch(e){ }
             }, 250)

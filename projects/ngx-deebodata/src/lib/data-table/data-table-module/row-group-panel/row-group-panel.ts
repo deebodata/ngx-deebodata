@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, Output, ViewChild, EventEmitter, SimpleChanges, HostListener, input, signal } from '@angular/core';
+import { Component, ElementRef, Input, Output, ViewChild, EventEmitter, SimpleChanges, HostListener, input, signal, ChangeDetectorRef } from '@angular/core';
 import { CommonService } from '../../../services/common-service';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { DataTableService } from '../../../services/data-table-service';
@@ -63,6 +63,7 @@ export class RowGroupPanel {
   constructor(public common: CommonService,
               private tblDragService: TableDragService,
               public dataTableService: DataTableService,
+              private _cd: ChangeDetectorRef,
   ) {}
 
   ngOnChanges(changes: SimpleChanges) {
@@ -188,6 +189,7 @@ export class RowGroupPanel {
                     pEl.scrollBy(0, -1);
                 }
                 this.setRowNumPlacement()
+                this._cd.detectChanges()
               })
             }, 250)
           }
@@ -321,7 +323,7 @@ export class RowGroupPanel {
         setTimeout( () => { 
             this.setColsOnVisScreen()
             this.setRowNumPlacement()
-            setTimeout( () => { this.cleanUpPossibles() })
+            setTimeout( () => { this.cleanUpPossibles(); this._cd.detectChanges() })
         })
     }
 

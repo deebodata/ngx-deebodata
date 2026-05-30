@@ -2,3 +2,10 @@
     border-bottom:none!important;
     border-right:none!important;
 }
+
+::ng-deep img{
+    max-width: 100px !important;
+    height: auto;
+    margin: 0;
+    vertical-align: middle;
+}

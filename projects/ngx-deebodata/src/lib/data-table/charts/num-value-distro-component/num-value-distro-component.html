@@ -14,9 +14,9 @@
         (mouseenter)="matchVdBarToStat('insField' + common.elifyCol(column), nb.stat)" (mouseleave)="killAllVdHighlights()"
         [ngStyle]="{ 'left': nb.left, 'background': (nb.background || 'rgb(50, 50, 50)') }"></div>
     }
-    @if(avgColValBar){
-        <div class="num-col-avg-dist-bar" [style.left]="avgColValBar.left" [attr.data-number]="avgColValBar.number"
-        (mouseenter)="matchVdBarToStat('insField' + common.elifyCol(column), avgColValBar.number)" (mouseleave)="killAllVdHighlights()">
+    @if(avgColValBar()){
+        <div class="num-col-avg-dist-bar" [style.left]="avgColValBar().left" [attr.data-number]="avgColValBar().number"
+        (mouseenter)="matchVdBarToStat('insField' + common.elifyCol(column), avgColValBar().number)" (mouseleave)="killAllVdHighlights()">
         </div>
     }
 </div>

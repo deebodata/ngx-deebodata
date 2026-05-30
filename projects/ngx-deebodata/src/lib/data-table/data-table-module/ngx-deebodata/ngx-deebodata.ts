@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, HostListener, input, Input, NgZone, Output, signal, SimpleChanges, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener, input, Input, Output, signal, SimpleChanges, ViewChild } from '@angular/core';
 import { ColumnHeader } from '../../../interfaces/column-header';
 import { CommonService } from '../../../services/common-service';
 import { TableDragService } from '../../../services/table-drag-service';
@@ -127,7 +127,8 @@ export class NgxDeebodata {
 
     constructor(public dataTableService: DataTableService, 
                 private tblDragService: TableDragService,
-                public common: CommonService,) {
+                public common: CommonService,
+                private _cd: ChangeDetectorRef,) {
   
       }
 
@@ -135,7 +136,7 @@ export class NgxDeebodata {
       aboveHgt = signal<number>(0);
       belowHgt = signal<number>(0);
       dtChecks: number[] = [];
-      rowNos: RowNumber[] = [];
+      rowNos = signal<RowNumber[]>([]);
       verticalRest = 0
       horizRest = signal<number>(0)
       isScrolling = false;
@@ -403,7 +404,7 @@ export class NgxDeebodata {
             this.aboveHgt.set(0)
             this.belowHgt.set(0)
             this.dtChecks = []
-            this.rowNos = []
+            this.rowNos.set([])
             this.clearValidatedEdit(null, true)
             this.dataTableService.currMapping = {}
             this.dataTableService.currSelRows = []
@@ -619,8 +620,8 @@ export class NgxDeebodata {
     setRowNumbers() {
         const rlen = this.rows.length
         if(this.rowNumbers && rlen){
-            const hasHgt: RowNumber[] = this.rowNos.filter( r => r.height)
-            this.rowNos = []
+            const hasHgt: RowNumber[] = this.rowNos().filter( r => r.height)
+            let rns: RowNumber[] = []
             let n = (this.lastElRowIndex + 1) - rlen
             for(n; n <= this.lastElRowIndex; n++){
                 let rn: any = {number: n + 1}
@@ -629,8 +630,9 @@ export class NgxDeebodata {
                     if(hh)
                         rn.height = hh.height
                 }
-                this.rowNos.push(rn)
+                rns.push(rn)
             }
+            this.rowNos.set([...rns])
             const r1 = document.getElementById("dataTableRow" + this.rows[0]?.index)
             if(r1){
                 const useCalc = -(this.dataTableService.tblTop - r1.getBoundingClientRect().top)
@@ -1132,7 +1134,7 @@ export class NgxDeebodata {
             this.setRowSelChecksPlacement()
             if(this.listenToCellDraggerMouseMove)
                 this.settleCellDragger()
-            setTimeout( () => { this.cleanUpPossibles() })
+            setTimeout( () => { this.cleanUpPossibles(); this._cd.detectChanges() })
         })
     }
 
@@ -1393,7 +1395,8 @@ export class NgxDeebodata {
             const tbl = this.dataTableBody.nativeElement
             const defNum = parseInt(this.dataTableService.defltRHgt.replace(/[ ]?px/g, ""))
             tbl.scrollTop = ind*defNum;
-            setTimeout( () => { this.setRowSelChecksPlacement() })
+            this._cd.markForCheck();
+            setTimeout( () => { this.setRowSelChecksPlacement(); this._cd.detectChanges(); })
         }
     }
 
@@ -1833,9 +1836,14 @@ export class NgxDeebodata {
                         const item = this.dataTableService.mainData[drow?.index]
                         if(item){
                             const indx = this.dataTableService.findObjIndxInData(item, this.dataTableService.currFilData) + 1
-                            const rNum = this.rowNos.find( r => r.number === indx)
-                            if(rNum)
-                                rNum.height = useHgt
+                            // const rNum = this.rowNos().find( r => r.number === indx)
+                            // if(rNum)
+                            //     rNum.height = useHgt
+                            this.rowNos.set(this.rowNos().map( (r) => {
+                                if(r.number === indx)
+                                    r.height = useHgt
+                                return r
+                            }))
                         }
                     }                    
                 }
@@ -1957,7 +1965,7 @@ export class NgxDeebodata {
         this.rows = []
         this.aboveHgt.set(0)
         this.belowHgt.set(0)
-        this.rowNos = []
+        this.rowNos.set([])
         this.dtChecks = []
         this.clearValidatedEdit(null, true)
         this.dataTableService.currMapping = {}

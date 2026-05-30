@@ -8,13 +8,13 @@
     </div><div class="half-wid" [id]="'max' + common.elifyCol(column)">
         <span class="v-mid">Max: </span><span class="lg-text v-mid{{symCls}}" [attr.data-symbol]="symAttr">{{max}}</span>
     </div>@if(modeHtml){ <div [innerHTML]="modeHtml"></div>}<div>{{tdivHtml}}</div>
-    @if(numValDistMsg){ <div class="vdh-loading">{{numValDistMsg}}</div> }
+    @if(numValDistMsg()){ <div class="vdh-loading">{{numValDistMsg()}}</div> }
     @if(numLen < numArrMax){
         <app-num-value-distro-component
         [column]="column"
         [average]="numAvg"
         [originalArr]="colData"
-        (done)="numValDistMsg = $event"
+        (done)="setDistMsg($event)"
         [title]="'Building ' + common.sanitizeUi(common.titleCase(column)) + ' value distribution...'"
         ></app-num-value-distro-component>
     }
