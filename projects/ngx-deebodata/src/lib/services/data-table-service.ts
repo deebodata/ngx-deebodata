@@ -28,8 +28,12 @@ export class DataTableService {
             currFilData: any[] = []
             currMapping: any = {}
             mapperWorkerId: number = 1;
-            dTblHeight: number = 500;
+            dTblHeight = signal<number>(500);
+            listenForScroll = signal<boolean>(true)
+            lockCellFocus = signal<boolean>(false);
             defltRHgt: string = "50px"
+            defltRHgtNum: number = 50
+            mouseIsDown: boolean = false;
             isSorting = signal<boolean>(false);
             isFiltering = signal<boolean>(false);
             showCharts = signal<boolean>(false)
@@ -52,6 +56,7 @@ export class DataTableService {
             closeGroupByOpts: Subject<boolean> = new Subject()
             gridEventWhileGrouped: Subject<any> = new Subject()
             gridScrollEndWhileGrouped: Subject<any> = new Subject()
+            groupedBoundsChange: Subject<any> = new Subject()
             mouseupWhileGrouped: Subject<any> = new Subject()
             setIdealColumnWidth: Subject<any> = new Subject()
             currSelRows: any[] = []//just be an index of mainData
@@ -129,6 +134,7 @@ export class DataTableService {
             setTblBounds() {
                 this.setTblVertBounds()//critical, do it again it's ok
                 this.setTblHorizBounds()
+                this.groupedBoundsChange.next(true)
             }
 
             elIsAboveFold(el: HTMLElement | null, top: number): boolean {

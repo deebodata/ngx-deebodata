@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, ElementRef, EventEmitter, HostListener, input, Input, Output, signal, SimpleChanges, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, input, Input, Output, signal, SimpleChanges, ViewChild } from '@angular/core';
 import { ColumnHeader } from '../../../interfaces/column-header';
 import { CommonService } from '../../../services/common-service';
 import { TableDragService } from '../../../services/table-drag-service';
@@ -20,6 +20,7 @@ import { ColumnStyles, ValueCss } from '../../../interfaces/column-styles';
 import { finalize, Subscription } from 'rxjs';
 import { ColumnSymbol } from '../../../interfaces/column-symbol';
 import { ColumnValueColors } from '../../../interfaces/column-value-colors';
+import { timer } from 'rxjs';
 
 @Component({
   selector: 'ngx-deebodata',
@@ -86,6 +87,12 @@ export class NgxDeebodata {
             this.handleDraggerMU(e)
         if(this.currGroupValues().length)
             return this.dataTableService.mouseupWhileGrouped.next(e)
+        this.handleScrlBarDrag()
+    }
+
+    @HostListener('window:mousedown', ['$event'])
+    onWindowMouseDown(e: MouseEvent) {
+        this.dataTableService.mouseIsDown = true
     }
 
     @HostListener('window:mousemove', ['$event'])
@@ -127,20 +134,23 @@ export class NgxDeebodata {
 
     constructor(public dataTableService: DataTableService, 
                 private tblDragService: TableDragService,
-                public common: CommonService,
-                private _cd: ChangeDetectorRef,) {
+                public common: CommonService,) {
   
       }
 
       rows: DataRow[] = [];
       aboveHgt = signal<number>(0);
       belowHgt = signal<number>(0);
+      rnBTop = signal<number>(0);
       dtChecks: number[] = [];
-      rowNos = signal<RowNumber[]>([]);
+      rowNos: RowNumber[] = [];
       verticalRest = 0
       horizRest = signal<number>(0)
       isScrolling = false;
       useRowWid: string = ""
+      dtr: string = "dataTableRow";
+      rowElsPad = 1;
+      doRowsMod: number = 10;
       currGroupValues = signal<any[]>([])
       chartHgt: string = ""
       chartState: string = "all"
@@ -165,6 +175,10 @@ export class NgxDeebodata {
       togSelRows: string = "Selected Rows"
       maxCols: number = 0;
       lastElRowIndex: number = 0;
+      scrollDir: string = "down";
+      transY =signal<number>(0);
+      finishScrollTO: any = null;
+      valEditFocusTo: any = null;
       columnHeaders: ColumnHeader[] = []
       columnNames: string[] = []
       linkCell: any;
@@ -197,7 +211,6 @@ export class NgxDeebodata {
       @ViewChild("belowArea", { static: true }) belowArea!: ElementRef<HTMLElement>;
       @ViewChild("validatedEdit", { static: true }) validatedEdit!: ElementRef<HTMLElement>;
       @ViewChild("rowNumHeader", { static: true }) rowNumHeader!: ElementRef<HTMLElement>;
-      @ViewChild("rowNumBody", { static: true }) rowNumBody!: ElementRef<HTMLElement>;
       @ViewChild("fCellDragger", { static: true }) fCellDragger!: ElementRef<HTMLElement>;
       @ViewChild("selFilContainer", { static: true }) selFilContainer!: ElementRef<HTMLElement>;
       @ViewChild("btnTogSelRows", { static: true }) btnTogSelRows!: ElementRef<HTMLButtonElement>;
@@ -205,7 +218,7 @@ export class NgxDeebodata {
       @ViewChild("topLevelDataFilter", { static: true }) topLevelDataFilter!: ElementRef<HTMLInputElement>;
 
       ngOnChanges(changes: SimpleChanges) {
-        if(typeof changes !== "undefined" && changes["data"] && this.validationSettled() && !this.dataHasBeenSet() && this.data().length)
+        if(typeof changes !== "undefined" && changes["data"] && this.validationSettled() && !this.dataHasBeenSet() && this.data() && this.data().length)
           this.handleDataInput()
       }
 
@@ -215,10 +228,12 @@ export class NgxDeebodata {
       }
 
       execSetters() {
-          if(this.defRowHgt && /\d+px/g.test(this.defRowHgt))
+          if(this.defRowHgt){
               this.dataTableService.defltRHgt = this.defRowHgt
+              this.dataTableService.defltRHgtNum = parseInt(this.defRowHgt.replace(/[ ]?(px|vh|\%)/g, ""));
+          }
           if(this.defGridHgt)
-              this.dataTableService.dTblHeight = this.defGridHgt
+              this.dataTableService.dTblHeight.set(this.defGridHgt)
           if(this.myColumnSymbols)
               this.dataTableService.columnSymbols = [...this.myColumnSymbols]
           if(this.myColumnStyles)
@@ -238,10 +253,9 @@ export class NgxDeebodata {
           this.buildInitUiDataTable(tdata, this.color1, this.color2)//hex or rgb values work best
           if(!this.dataTableService.errorLoading)
               this.dataTableService.noDataMsg = "No data to display for this configuration.";
-          this.tblDragService.dTblHeightOutput.subscribe( h => this.setTableHeight(h) )
+          this.tblDragService.dTblHeightOutput.subscribe( h => this.setTableHeight(h, true) )
           this.tblDragService.columnMove.subscribe( c => this.processColMove(c) )
           this.dataTableService.currGrouping.subscribe( g => this.processGrouping(g) )
-          setTimeout( () => this.setTableHeight(510), 1000)//for demo
           this.dataHasBeenSet.set(true)
       }
 
@@ -311,21 +325,122 @@ export class NgxDeebodata {
             }
         }
 
-        setTableHeight(h: number) {
-            this.dataTableService.dTblHeight = h
+        setTableHeight(h: number, manual?: boolean) {
+            this.dataTableService.dTblHeight.set(h)
             setTimeout( () => { 
                 this.dataTableService.setTblBounds()
                 this.chartHgt = this.dataTable.nativeElement.getBoundingClientRect().height + "px";
                 if(!this.dataTableService.showCharts() && !this.currGroupValues().length){
-                    const el = this.dataTableBody?.nativeElement
-                    if(el){
-                        el.scrollBy(0, 1)
-                        el.scrollBy(0, -1)
-                    }
-                    setTimeout(() => { this.setRowSelChecksPlacement() })
+                    this.dataTableBody?.nativeElement.scrollBy(0, (this.scrollDir === "down" ? 1 : -1))
+                    setTimeout(() => { this.setRowSelChecksPlacement() }, 0)
                 }
-                if(this.currGroupValues().length)
-                    setTimeout( () => { this.dataTableService.gridScrollEndWhileGrouped.next(true) })
+                if(this.currGroupValues().length){
+                    setTimeout( () => { this.dataTableService.gridScrollEndWhileGrouped.next(true) }, 0)
+                } else {
+                    if(manual && !this.dataTableService.showCharts()){
+                        this.dataTableService.listenForScroll.set(false)
+                        if(this.tblDragService.handleTblHtTO)
+                            clearTimeout(this.tblDragService.handleTblHtTO)
+                        this.tblDragService.handleTblHtTO = setTimeout( () => {this.handleRowsOnHeightIncrease()}, 250) 
+                    }
+                }
+            }, 0)
+        }
+
+        handleRowsOnHeightIncrease() {
+            const len = this.rows.length
+            const defNum = this.dataTableService.defltRHgtNum
+            const nRows = Math.floor(Math.abs(this.tblDragService.tblHgtDiff)/defNum);
+            const cols = [...this.columnNames]
+            const colLen = cols.length
+            const vlen = this.dataTableService.visibleCols.length
+            const lastVisInd = cols.indexOf(this.dataTableService.visibleCols[(vlen-1)]) + 1;
+            if(this.tblDragService.tblHgtDiff > 0){//add rows
+                let i = this.lastElRowIndex+1;
+                let agoto = i+nRows;
+                const xtras = agoto - this.dataTableService.currFilData.length;
+                let bhToSub = 0
+                let ahToSub = 0
+                const applyRow = (o: number, setLast?: boolean) => {
+                    const item = this.dataTableService.currFilData[o];
+                    if(item){
+                        const index = this.dataTableService.currMapping[o] || this.dataTableService.findObjIndxInData(item)
+                        if(!this.rows.find(r => r.id === (this.dtr + index))){
+                            const row: DataRow = { id: this.dtr + index, index: index, width: this.useRowWid, cells: [], height: this.dataTableService.defltRHgt }
+                            let k = 0
+                            for(k; k < colLen; k++){
+                                const col = cols[k]
+                                if(col)
+                                    addCell(item[col], col, row, (k <= lastVisInd))
+                            } 
+                            if(setLast){
+                                this.rows.push(row)
+                                if(bhToSub < this.belowHgt())
+                                    bhToSub += defNum
+                                else
+                                    ahToSub += defNum
+                                this.setLastRowIndex()
+                            } else {
+                                this.rows.unshift(row)
+                                ahToSub += defNum;
+                            }
+                            if(!this.dtChecks.includes(index))
+                                this.dtChecks.push(index)
+                        }
+                    }
+                }
+                const addCell = (text: any, prop: string | null, row: DataRow | null, visible: boolean) => {
+                    if(prop && row){
+                        const useProp = this.dataTableService.dataFilSrtTracker[prop]
+                        const notNum = (this.dataTableService.figureFilterType(prop) != "number" || /(year|yr|fy)/g.test(prop.toLocaleLowerCase())) ? true : false
+                        const useTxt = this.dataTableService.figureCellText(text, notNum, this.dataTableService.dataFilSrtTracker[prop]["colCellSymbol"])
+                        const colStyle = this.dataTableService.getColumnStyle(prop)
+                        row.cells?.push({
+                        column: prop,
+                        freeze: useProp.freeze,
+                        minimized: useProp.minimize,
+                        rawText: text,
+                        visible: visible,
+                        width: useProp.colWidth || this.dataTableService.useColWid,
+                        editable: useTxt.prop === "textContent" ? this.editable : false,
+                        dataType: this.dataTableService.figureFilterType(prop),
+                        text: (useTxt.prop === "textContent" ? useTxt.value : ""),
+                        html: (useTxt.prop !== "textContent" ? useTxt.value : ""),
+                        specialColClass: (colStyle ? (colStyle + this.common.elifyCol(useTxt.value)) : ""),
+                        })
+                    }
+                }
+                for(i; i < agoto; i++)
+                    applyRow(i, true)
+                if(xtras > 0){
+                    const elsLen = document.getElementsByClassName("data-table-row").length
+                    let x = (this.lastElRowIndex-elsLen)-1;
+                    let xgoto = x-xtras;
+                    for(x; x >= xgoto; x--)
+                        applyRow(x)
+                }
+                if(bhToSub)
+                    this.belowHgt.set((this.belowHgt() - bhToSub));
+                if(ahToSub)
+                    this.aboveHgt.set((this.aboveHgt() - ahToSub));
+            } else {
+                let bhToAdd = 0
+                const goto = Math.max(0, (len-nRows))
+                for(var o = (len-1); o >= goto; o--){
+                    let el = this.rows[o]
+                    if(el){
+                        this.rows = this.rows.filter( r => r.index !== el.index)
+                        this.dtChecks = this.dtChecks.filter( c => c !== el.index)
+                        bhToAdd += defNum
+                    }
+                }
+                if(bhToAdd)
+                    this.belowHgt.set((this.belowHgt() + bhToAdd));
+            }
+            setTimeout( () => { 
+                this.dataTableService.listenForScroll.set(true) 
+                this.setRowNumbers(); 
+                this.tblDragService.tblHgtDiff = 0; 
             })
         }
 
@@ -370,7 +485,7 @@ export class NgxDeebodata {
                             this.columnHeaders.splice((inAft+1), 0, addCol)
                     }
                 }
-                setTimeout( () => {
+                timer(100).subscribe( () => {
                     let i = 0
                     const els = document.getElementsByClassName("col-header")
                     const len = els.length
@@ -389,9 +504,10 @@ export class NgxDeebodata {
                     if(dtB){
                         const willSclTo = dtB.scrollLeft
                         this.renderCurrData(false)
-                        setTimeout( () => { dtB.scrollLeft = willSclTo })
+                        timer(0).subscribe( () => { dtB.scrollLeft = willSclTo })
                     }
-                }, 100)
+                    this.setHoldingCheckCls()
+                })
             }
             this.clearValidatedEdit(null, true)
         }
@@ -399,18 +515,23 @@ export class NgxDeebodata {
         processGrouping(group: any): any {
             if(!group)
                 return this.resetCurrentData()
+            const dtb = this.dataTableBody?.nativeElement
+            this.horizRest.set(0)
+            if(dtb){
+                dtb.scrollLeft = 0;
+                dtb.scrollTop = 0;
+            }
             this.verticalRest = 0
             this.rows = []
             this.aboveHgt.set(0)
             this.belowHgt.set(0)
             this.dtChecks = []
-            this.rowNos.set([])
+            this.rowNos = []
             this.clearValidatedEdit(null, true)
             this.dataTableService.currMapping = {}
             this.dataTableService.currSelRows = []
             this.dataTableService.displayOnlySelRows = false
             this.dataTableService.currGroup = group
-            this.dataTableBody.nativeElement.scrollTop = 0;
             this.currGroupValues.set(this.dataTableService.dataFilSrtTracker[group]?.["selDDVals"]?.filter( (g: any) => g.value !== "(Select All)"))
             setTimeout( () => { this.rows = [] })
         }
@@ -625,13 +746,27 @@ export class NgxDeebodata {
         }
     }
 
+    cleanRowChecks() {
+        const len = this.dtChecks.length
+        for(let i = (len-1); i >= 0; i--){
+            const chk = this.dtChecks[i]
+            if(this.dtChecks.filter( d => d === chk).length > 1){
+                const cind = this.dtChecks.lastIndexOf(chk)
+                this.dtChecks = this.dtChecks.filter( (d, ind) => ind !== cind) 
+            }
+            const accRow = this.rows.find( r => r.index === chk)
+            if(!accRow)
+                this.dtChecks = this.dtChecks.filter( d => d !== chk )
+        }
+    }
+
     rowNTO: any = null;
 
     setRowNumbers() {
         const rlen = this.rows.length
         if(this.rowNumbers && rlen){
-            const hasHgt: RowNumber[] = this.rowNos().filter( r => r.height)
-            let rns: RowNumber[] = []
+            const hasHgt: RowNumber[] = this.rowNos.filter( r => r.height)
+            this.rowNos = []
             let n = (this.lastElRowIndex + 1) - rlen
             for(n; n <= this.lastElRowIndex; n++){
                 let rn: any = {number: n + 1}
@@ -640,13 +775,17 @@ export class NgxDeebodata {
                     if(hh)
                         rn.height = hh.height
                 }
-                rns.push(rn)
+                this.rowNos.push(rn)
             }
-            this.rowNos.set([...rns])
-            const r1 = document.getElementById("dataTableRow" + this.rows[0]?.index)
-            if(r1){
-                const useCalc = -(this.dataTableService.tblTop - r1.getBoundingClientRect().top)
-                this.rowNumBody.nativeElement.style.marginTop = Math.min(useCalc, 0) +  "px"
+            const listen = this.dataTableService.listenForScroll();
+            const r1 = document.getElementsByClassName("data-table-row")[0]
+            if(r1 && listen){
+                const ty = (this.transY()*(this.scrollDir === "down" ? -1 : 1));
+                const useCalc = -(this.dataTableService.tblTop - r1.getBoundingClientRect().top) - ty;
+                this.rnBTop.set(Math.min(useCalc, 0))
+            } else {
+                if(listen)
+                    this.rnBTop.set(0)
             }
         }
     }
@@ -758,8 +897,7 @@ export class NgxDeebodata {
 
         setLastRowIndex() {
             const realMax = this.dataTableService.currFilData.length - 1
-            const defNum = parseInt(this.dataTableService.defltRHgt.replace(/[ ]?px/g, ""))
-            const wannabeMax = (this.rows.length - 1) + Math.floor(this.aboveHgt()/defNum)
+            const wannabeMax = (this.rows.length - 1) + Math.floor(this.aboveHgt()/this.dataTableService.defltRHgtNum)
             this.lastElRowIndex = Math.min(wannabeMax, realMax)
             return this.lastElRowIndex;
         }
@@ -771,14 +909,15 @@ export class NgxDeebodata {
               const len = data.length;
               const colLen = cols.length
               this.maxCols = this.setMaxCols()
-              const defNum = parseInt(this.dataTableService.defltRHgt.replace(/[ ]?px/g, ""))
-              const init = Math.max(this.dataTableService.dTblHeight/defNum);
+              const defNum = this.dataTableService.defltRHgtNum
+              const init = Math.ceil(this.dataTableService.dTblHeight()/defNum)+this.rowElsPad;
               this.dataTableService.useColWid = Math.ceil((this.dataTableBody.nativeElement.getBoundingClientRect().width-16)/Math.min(colLen, this.maxCols)) + "px"
               for(i; i < colLen; i++){
                   this.columnHeaders.push({ column: cols[i], width: this.dataTableService.useColWid, hideMinCol: false, freeze: false, minimized: false, dataType: this.dataTableService.figureFilterType(cols[i]) })
                   if(i < this.maxCols)
                     this.dataTableService.visibleCols.push(cols[i])
               }
+              this.setHoldingCheckCls()
               this.columnNames = this.columnHeaders.map( c => c.column)
               const initVisCols = cols.filter( (c, ind) => ind <= (this.maxCols+1) )
               const addCell = (text: any, prop: string | null, row: DataRow | null, indx: number) => {
@@ -807,25 +946,29 @@ export class NgxDeebodata {
               }
               this.useRowWid = this.getAllColWidth(colLen) + "px"
               const limit = Math.min(init, len)
+              let localRows: DataRow[] = [];
               for(n; n < limit; n++){
-                this.rows.push({ id: "dataTableRow" + n, index: n, width: this.useRowWid, cells: [], height: this.dataTableService.defltRHgt })
+                const row: DataRow = { id: "dataTableRow" + n, index: n, width: this.useRowWid, cells: [], height: this.dataTableService.defltRHgt }
                 let k = 0
                 for(k; k < colLen; k++)
-                    addCell(data[n][cols[k]], cols[k], this.rows[n], n)
+                    addCell(data[n][cols[k]], cols[k], row, n)
+                localRows.push(row)
                 this.dataTableService.currMapping[n] = n
               }
+              this.rows = [...localRows];
               this.setLastRowIndex()
               this.paginatorReady = true;
               this.handleTheme(color1, color2)
               this.handleColAnyDDFilters(data, cols)
-              setTimeout( () => { 
+              if(len >= 500000)
+                this.doRowsMod = 15
+              timer(0).subscribe( () => { 
                 this.testHideMinBtn() 
                 this.setColHeaderHgt()
-                this.setHoldingCheckCls()
                 this.setRowSelChecksPlacement()
                 this.dataTableService.setTblBounds()
               })
-              setTimeout( () => { 
+              timer(250).subscribe( () => { 
                 this.dataTableService.setIdealColumnWidth.next(true)
                 if(len > init){
                     let total = 0
@@ -835,11 +978,10 @@ export class NgxDeebodata {
                         this.dataTableService.currMapping[z] = z
                     }
                     this.belowHgt.set(total*defNum)
-                    setTimeout( () => { if(this.dataTableBody) {this.dataTableBody.nativeElement.scrollBy(0, 1); this.dataTableBody.nativeElement.scrollBy(0, -1)} })
                 }
                 
                 this.setColsOnVisScreen()
-            }, 250)
+            })
             this.getPrimaryKey(cols)
           } catch(e) {}                
       }
@@ -1078,6 +1220,41 @@ export class NgxDeebodata {
         }
         this.dataTableService.visibleCols = [...vCols]
       }
+
+      handleScrlBarDrag() {
+        this.dataTableService.mouseIsDown = false;
+        if(!this.finishScrollTO && this.dataTableService.currEditIndex === -1){
+            timer(0).subscribe(() => {this.completeScroll(); this.dataTableService.listenForScroll.set(true);})
+        } else {
+            this.dataTableService.listenForScroll.set(true);
+        }
+      }
+
+      setAllRowsDefHgt() {
+          let i = 0
+          const len = this.rows.length
+          for(i; i < len; i++)
+              this.setSingleRowHgt(this.dataTableService.defltRHgtNum, this.rows[i].id, true) 
+      }
+
+      completeScroll() {
+         this.isScrolling = false
+         this.finishScrollTO = null
+         const dtb = this.dataTableBody?.nativeElement
+         if(dtb){
+            const lfs = this.dataTableService.listenForScroll()
+            if(this.scrollDir === "down")
+                this.execVertScrollUp(this.columnNames, this.columnNames.length, dtb.scrollTop, true)
+            else
+                this.execVertScrollDown(this.columnNames, this.columnNames.length, dtb.scrollTop, true)
+            this.handleScrollEnd()
+            this.execHorizScroll(dtb.scrollLeft)
+            if(lfs && this.rows.some( r => r.height !== this.dataTableService.defltRHgt))
+                this.setAllRowsDefHgt()
+            if(!lfs)
+                timer(0).subscribe(() => {this.dataTableService.listenForScroll.set(true) });
+         }
+      }
       
       handleScroll(event: any) {
           if(this.currGroupValues().length || this.dataTableService.showCharts())
@@ -1086,20 +1263,22 @@ export class NgxDeebodata {
           const left = event.target.scrollLeft
           /*horiz scroll*/
           if(left !== this.horizRest())
-            requestAnimationFrame( () => { this.execHorizScroll(left) })
+            this.execHorizScroll(left)
           /*horiz scroll*/
           /*vert scroll*/
-          if(top === this.verticalRest || this.lockVScroll){
-              this.isScrolling = false
+          if(top === this.verticalRest || this.lockVScroll || !this.dataTableService.listenForScroll()){
               if(!this.dataTableService.autoScrollOnEdit)
                 this.clearValidatedEdit();
               return this.setRowSelChecksPlacement()
           }
           this.isScrolling = true
-          requestAnimationFrame( () => { this.execVertScroll(top) })
+          this.execVertScroll(top)
           /*vert scroll*/
           if(top%2===0)
             this.clearValidatedEdit()
+          if(this.finishScrollTO)
+              this.finishScrollTO.unsubscribe()
+          this.finishScrollTO = timer(150).subscribe( () => { this.completeScroll() })  
         }
 
         execHorizScroll(left: number) {
@@ -1114,37 +1293,39 @@ export class NgxDeebodata {
             this.setColsOnVisScreen()
         }
 
-        execVertScroll(top: number) {
-            if(top >= this.verticalRest){
-                this.execVertScrollDown(this.columnNames, this.columnNames.length)
-                this.clearAboveFoldRows()
-                this.scrollDir = "down"
-            } else {//scrolling back up
-                this.execVertScrollUp(this.columnNames, this.columnNames.length)
-                this.clearBelowFoldRows()
-                this.scrollDir = "up"
-            }
-            this.verticalRest = top;
-            if(this.rowNumbers && top%2 === 0)
-                this.setRowNumbers()
+        fixRowContainer(transY: number) {
+            this.transY.set(transY);
         }
 
-        scrollDir: string = "down"
+        execVertScroll(top: number) {
+            if(top >= this.verticalRest){
+                this.scrollDir = "down"
+                this.execVertScrollDown(this.columnNames, this.columnNames.length, top)
+            } else {//scrolling back up
+                this.scrollDir = "up"
+                this.execVertScrollUp(this.columnNames, this.columnNames.length, top)
+            }
+            this.verticalRest = top;
+        }
 
     handleScrollEnd(): any {
+        if(!this.dataTableService.listenForScroll())
+            return;
+        this.fixRowContainer(0)
         this.isScrolling = false
         this.lockVScroll = false
         if(this.currGroupValues().length)
-            return setTimeout( () => { this.dataTableService.gridScrollEndWhileGrouped.next(true) })
+            return timer(0).subscribe( () => { this.dataTableService.gridScrollEndWhileGrouped.next(true) })
         if(this.dataTableService.showCharts())
             return;
-        setTimeout( () => { 
+        timer(0).subscribe( () => { 
             this.dataTableService.autoScrollOnEdit = false
             this.setColsOnVisScreen()
+            this.cleanRowChecks()
             this.setRowSelChecksPlacement()
             if(this.listenToCellDraggerMouseMove)
                 this.settleCellDragger()
-            setTimeout( () => { this.cleanUpPossibles(); this._cd.detectChanges() })
+            timer(0).subscribe( () => { this.cleanUpPossibles(); })
         })
     }
 
@@ -1166,6 +1347,24 @@ export class NgxDeebodata {
             html: useTxt.prop !== "textContent" ? useTxt.value : "",
             specialColClass: (colStyle ? (colStyle + this.common.elifyCol(useTxt.value)) : ""),
         }
+    }
+
+    setCellsOnVertScroll(text: string, prop: string, row: DataRow, vis: boolean) {
+        const useProp = this.dataTableService.dataFilSrtTracker[prop]
+        const notNum = (this.dataTableService.figureFilterType(prop) != "number" || /(year|yr|fy)/g.test(prop.toLocaleLowerCase())) ? true : false
+        const useTxt = this.dataTableService.figureCellText(text, notNum, useProp["colCellSymbol"])
+        const colStyle = this.dataTableService.getColumnStyle(prop)
+        row.cells = row.cells?.map( c => {
+            if(c.column === prop){
+                c.visible = vis;
+                c.rawText = text
+                c.specialColClass = (colStyle ? (colStyle + this.common.elifyCol(useTxt.value)) : "");
+                c.text = useTxt.prop === "textContent" ? useTxt.value : "";
+                c.html = useTxt.prop !== "textContent" ? useTxt.value : "";
+                return c
+            }
+            return c
+        })
     }
 
     execHorizBodyScroll() {
@@ -1217,11 +1416,11 @@ export class NgxDeebodata {
                 }
             }
         }
-                setTimeout( () => { 
+                timer(50).subscribe( () => { 
                     this.dataTableService.setIdealColumnWidth.next(true); 
                     this.setColsOnVisScreen() 
-                    setTimeout( () => { this.cleanUpPossibles() })
-                }, 50)
+                    timer(0).subscribe( () => { this.cleanUpPossibles() })
+                })
     }
 
     cleanUpPossibles() {
@@ -1250,31 +1449,114 @@ export class NgxDeebodata {
         }
     }
 
-    execVertScrollDown(cols: string[], colLen: number) {
-        let canAdd = 0
-        const actvCols = this.columnHeaders.map(c => c.column)
-        const vlen = this.dataTableService.visibleCols.length
-        const lastVisInd = actvCols.indexOf(this.dataTableService.visibleCols[(vlen-1)]) + 1
-        const bel = this.belowArea.nativeElement
-        const bbds = bel.getBoundingClientRect()
-        const rTop = (bbds.top - this.verticalRest)
-        const gap = this.dataTableService.tblBot - rTop
-        const defNum = parseInt(this.dataTableService.defltRHgt.replace(/[ ]?px/g, ""))
-        if(gap > 0){
+    applyToDomRows(rows: any[], cols: string[], colLen: number, lastVisInd: number, dir: string, defNum: number, newRows: number) {
+        const len = this.rows.length
+        let nrowsAcctFor = 0
+        let chks: number[] = []
+        if(dir === "down"){
+            let i = 0;
+            let ahToAdd: number = 0;
+            let bhToSub: number = 0;
+            for(i; i < len; i++){
+                const row = this.rows[i]//move the top x num of dom rows to the bottom
+                const vrow = rows[i]//{index: index, data: item}
+                if(vrow && vrow.index !== row.index){
+                    const index = vrow.index
+                    const doIt = index > -1;
+                    if(doIt){
+                        for(let k = (colLen-1); k >= 0; k--){
+                            const col = cols[k]
+                            if(col)
+                                this.setCellsOnVertScroll(vrow.data[col], col, row, (k <= lastVisInd))//prepend
+                        }
+                    }
+                    if(nrowsAcctFor < newRows){
+                        ahToAdd += defNum
+                        bhToSub += defNum
+                    }
+                    if(doIt){
+                        row.id = this.dtr + index
+                        row.index = index
+                        if(!this.dtChecks.includes(index))
+                            chks.push(index)
+                    }
+                    nrowsAcctFor++;
+                }
+            }
+            if(chks.length)
+                this.dtChecks = [...this.dtChecks, ...chks]
+            if(ahToAdd)
+                this.aboveHgt.set((this.aboveHgt() + ahToAdd))
+            if(bhToSub)
+                this.belowHgt.set(Math.max(0, (this.belowHgt() - bhToSub)))
+        } else {
+            let v = 0
+            const ulen = (len-1)
+            let ahToSub: number = 0;
+            let bhToAdd: number = 0;
+            for(var o = ulen; o >= 0; o--){
+                const row = this.rows[o]
+                const vrow = rows[v]//{index: index, data: item}
+                if(vrow && vrow.index !== row.index){
+                    const index = vrow.index
+                    const doIt = index > -1;
+                    if(doIt){
+                        for(let k = (colLen-1); k >= 0; k--){
+                            const col = cols[k]
+                            if(col)
+                                this.setCellsOnVertScroll(vrow.data[col], col, row, (k <= lastVisInd))//prepend
+                        }
+                    }
+                    if(nrowsAcctFor < newRows){
+                        ahToSub += defNum;
+                        bhToAdd += defNum
+                    }
+                    if(doIt){
+                        row.id = this.dtr + index
+                        row.index = index
+                        if(!this.dtChecks.includes(index))
+                            chks.push(index)
+                    }
+                    nrowsAcctFor++;
+                }
+                v++
+            }
+            if(chks.length)
+                this.dtChecks = [...this.dtChecks, ...chks]
+            if(ahToSub)
+                this.aboveHgt.set(Math.max(0, (this.aboveHgt() - ahToSub)))
+            if(bhToAdd)
+                this.belowHgt.set((this.belowHgt() + bhToAdd))
+        }
+        this.finishApplyingDomRows()
+    }
+
+    getLastRowBot(): number {
+        const els = document.getElementsByClassName("data-table-row")
+        return els[els.length-1]?.getBoundingClientRect()?.bottom || this.dataTableService.tblBot;
+    }
+
+    execVertScrollDown(cols: string[], colLen: number, currTop: number, force?: boolean) {
+        let gap = this.dataTableService.tblBot - this.getLastRowBot();
+        this.fixRowContainer(gap)
+        timer(0).subscribe( () => {
             let h = 0
+            let rows = []
+            let canAdd = 0
+            const maxRows = this.rows.length
+            const doRows = force || (!this.isScrolling && (gap == 0 || !this.dataTableService.mouseIsDown)) || currTop%this.doRowsMod === 0 || this.belowHgt() === 0;
+            const bel = this.belowArea.nativeElement
+            const bbds = bel.getBoundingClientRect()
+            const btop = bbds.top - gap
+            const defNum = this.dataTableService.defltRHgtNum
             let z = this.lastElRowIndex + 1
-            const last = document.getElementById("dataTableRow" + this.lastElRowIndex)
-            if(last && this.dataTableService.elIsBelowFold(last, this.dataTableService.tblBot))
-                return;
             let bhToSub = 0
             let ahToAdd = 0
             const rowsInGap = Math.ceil(gap/defNum)
-            canAdd = z+(rowsInGap)
-            let chksToAdd = []
-            let rowsToAdd: DataRow[] = []
+            canAdd = z+rowsInGap
             const goTo = Math.min(this.dataTableService.currFilData.length, canAdd)
             for(z; z < goTo; z++){
-                const wldBeElTop = bbds.top + (defNum*h);
+                const wldBeElTop = btop + (defNum*h);
                 const wldBeElBot = wldBeElTop+defNum
                 if(wldBeElBot < this.dataTableService.tblTop){
                     ahToAdd += defNum
@@ -1282,53 +1564,53 @@ export class NgxDeebodata {
                 } else {
                     if(wldBeElTop <= this.dataTableService.tblBot){
                         const item = this.dataTableService.currFilData[z]
-                        const index = this.dataTableService.currMapping[z] || this.dataTableService.findObjIndxInData(item)
-                        if(index > -1 && !this.rows.find( r => r.index === index)){
-                            const nRow: DataRow = { id: "dataTableRow" + index, index: index, width: this.useRowWid, cells: [], height: this.dataTableService.defltRHgt }
-                            let cells: DataCell[] = []
-                            for(let k = (colLen-1); k >= 0; k--){
-                                const col = cols[k]
-                                const cell = this.addCell(item[col], col, (k <= lastVisInd))
-                                if(typeof cell !== "string")
-                                    cells.unshift(cell)
-                            }
-                            nRow.cells = [...cells]
-                            chksToAdd.push(index)
-                            rowsToAdd.push(nRow)
-                            bhToSub += defNum
-                        }
+                        const index = this.dataTableService.currMapping[z] || (doRows ? this.dataTableService.findObjIndxInData(item) : -1)
+                        if(rows.length < maxRows)
+                            rows.push({index: index, data: item, elInd: z})
                     }
                 }
                 h += 1
             }
-            this.rows = [...this.rows, ...rowsToAdd]
             if(bhToSub)
-                this.belowHgt.set(Math.max(0, this.belowHgt() - bhToSub))
-            if(chksToAdd.length)
-                this.dtChecks= [...this.dtChecks, ...chksToAdd]
+                this.belowHgt.set(Math.max(0, (this.belowHgt() - bhToSub)))
             if(ahToAdd)
-                this.aboveHgt.set(this.aboveHgt() + ahToAdd)
-            this.setLastRowIndex()
-        }
+                this.aboveHgt.set((this.aboveHgt() + ahToAdd))
+            const repl = [...rows].length;//only new rows
+            const needsToFill = maxRows-repl;
+            if(needsToFill){
+                let f = !rows.length ? this.lastElRowIndex : (rows[0].elInd-1);
+                let fgoto = f-needsToFill;
+                for(f; f > fgoto; f--){
+                    const item = this.dataTableService.currFilData[f]
+                    const index = this.dataTableService.currMapping[f] || (doRows ? this.dataTableService.findObjIndxInData(item) : -1);
+                    rows.unshift({index: index, data: item})
+                }
+            }
+            const vlen = this.dataTableService.visibleCols.length
+            const lastVisInd = cols.indexOf(this.dataTableService.visibleCols[(vlen-1)]) + 1
+            this.applyToDomRows(rows, cols, colLen, lastVisInd, "down", defNum, repl)
+        })
     }
 
-    execVertScrollUp(cols: string[], colLen: number) {
-        const actvCols = this.columnHeaders.map(c => c.column)
-        const vlen = this.dataTableService.visibleCols.length
-        const lastVisInd = actvCols.indexOf(this.dataTableService.visibleCols[(vlen-1)]) + 1;
-        const ael = this.aboveArea.nativeElement
-        const abds = ael.getBoundingClientRect()
-        const defNum = parseInt(this.dataTableService.defltRHgt.replace(/[ ]?px/g, ""))
-        const rbot = abds.bottom
-        const gap = rbot - (this.dataTableService.tblTop)
-        if(gap > 0){
+    getFirstRowTop(): number {
+        return document.getElementsByClassName("data-table-row")[0]?.getBoundingClientRect().top || this.dataTableService.tblTop;
+    }
+
+    execVertScrollUp(cols: string[], colLen: number, currTop: number, force?: boolean) {
+        let gap = this.getFirstRowTop() - this.dataTableService.tblTop
+        this.fixRowContainer(-gap)
+        timer(0).subscribe( () => {
             let h = 0
-            const rlen = this.rows.length
-            let z = (this.lastElRowIndex - rlen)
-            if(z < 0)
-                return
+            let rows = []
+            const ael = this.aboveArea.nativeElement
+            const abds = ael.getBoundingClientRect()
+            const rbot = abds.bottom + gap;
+            const maxRows = this.rows.length
+            const defNum = this.dataTableService.defltRHgtNum
+            let z = (this.lastElRowIndex - maxRows)
             let bhToAdd = 0
             let ahToSub = 0
+            const doRows = force || (!this.isScrolling && (gap == 0 || !this.dataTableService.mouseIsDown)) || currTop%this.doRowsMod === 0 || this.aboveHgt() === 0;
             const rowsInGap = Math.ceil(gap/defNum)
             const min = Math.max(0, (z-rowsInGap))
             for(z; z >= min; z--){
@@ -1340,22 +1622,9 @@ export class NgxDeebodata {
                 } else {
                     if(wldBeElBot > this.dataTableService.tblTop){
                         const item = this.dataTableService.currFilData[z]
-                        const index = this.dataTableService.currMapping[z] || this.dataTableService.findObjIndxInData(item)
-                        if(index > -1){
-                            let k = 0
-                            const nRow: DataRow = { id: "dataTableRow" + index, index: index, width: this.useRowWid, cells: [], height: this.dataTableService.defltRHgt }
-                            let cells: DataCell[] = []
-                            for(k; k < colLen; k++){
-                                const col = cols[k]
-                                const cell = this.addCell(item[col], col, (k <= lastVisInd))
-                                if(typeof cell !== "string")
-                                    cells.push(cell)
-                            }
-                            nRow.cells = [...cells]
-                            this.rows = [nRow, ...this.rows]
-                            this.dtChecks = [index, ...this.dtChecks]
-                            ahToSub += defNum
-                        }
+                        const index = this.dataTableService.currMapping[z] || (doRows ? this.dataTableService.findObjIndxInData(item) : -1)
+                        if(rows.length < maxRows)
+                            rows.push({index: index, data: item, elInd: z})
                     }
                 }
                 h += 1
@@ -1363,48 +1632,36 @@ export class NgxDeebodata {
             if(ahToSub)
                 this.aboveHgt.set(Math.max(0, (this.aboveHgt() - ahToSub)))
             if(bhToAdd)
-                this.belowHgt.set(this.belowHgt() + bhToAdd)
-        }
+                this.belowHgt.set((this.belowHgt() + bhToAdd))
+            const repl = [...rows].length;//only new rows
+            const needsToFill = maxRows-repl;
+            if(needsToFill){
+                let f = (!rows.length ? (this.lastElRowIndex - maxRows) : rows[0].elInd)+1;
+                let fgoto = f+needsToFill;
+                for(f; f < fgoto; f++){
+                    const item = this.dataTableService.currFilData[f]
+                    const index = this.dataTableService.currMapping[f] || (doRows ? this.dataTableService.findObjIndxInData(item) : -1);
+                    rows.unshift({index: index, data: item})
+                }
+            }
+            const vlen = this.dataTableService.visibleCols.length
+            const lastVisInd = cols.indexOf(this.dataTableService.visibleCols[(vlen-1)]) + 1;
+            this.applyToDomRows(rows, cols, colLen, lastVisInd, "up", defNum, repl)
+        })
     }
 
-    clearAboveFoldRows() {
-        const els = this.rows.filter( r => this.dataTableService.elIsAboveFold(document.getElementById(r.id), (this.dataTableService.tblTop)))
-        const justids = els.map( e => e.id)
-        const justindx = els.map( e => e.index)
-        const changes = justids.length
-        if(changes > 0){
-            const defNum = parseInt(this.dataTableService.defltRHgt.replace(/[ ]?px/g, ""))
-            this.rows = this.rows.filter( r => justids.indexOf(r.id) < 0)
-            this.dtChecks = this.dtChecks.filter( c => justindx.indexOf(c) < 0)
-            const item = this.dataTableService.mainData[(this.rows[0]?.index || -1)]
-            if(item)
-                this.aboveHgt.set(Math.max(0, this.dataTableService.findObjIndxInData(item, this.dataTableService.currFilData)*defNum))
-        }
-    }
-
-    clearBelowFoldRows() {
-        const els = this.rows.filter( r => this.dataTableService.elIsBelowFold(document.getElementById(r.id), this.dataTableService.tblBot))
-        const justids = els.map( e => e.id)
-        const justindx = els.map( e => e.index)
-        let changes = justids.length
-        if(changes > 0){
-            const defNum = parseInt(this.dataTableService.defltRHgt.replace(/[ ]?px/g, ""))
-            this.rows = this.rows.filter( r => justids.indexOf(r.id) < 0)
-            this.dtChecks = this.dtChecks.filter( c => justindx.indexOf(c) < 0)
-            const rlen = this.rows.length
-            const item = this.dataTableService.mainData[(this.rows[(rlen-1)]?.index || -1)]
-            if(item)
-                this.belowHgt.set(Math.max(0, ((this.dataTableService.currFilData.length-1)-this.dataTableService.findObjIndxInData(item, this.dataTableService.currFilData))*defNum))
-            this.setLastRowIndex()
-        }
+    finishApplyingDomRows() {
+        this.setRowNumbers()
+        this.fixRowContainer(0)
+        this.setLastRowIndex()
+        this.cleanRowChecks()
     }
 
     jumpToRow(row: number) {
         if(this.dataTableBody){
             const ind = row - 1
             const tbl = this.dataTableBody.nativeElement
-            const defNum = parseInt(this.dataTableService.defltRHgt.replace(/[ ]?px/g, ""))
-            tbl.scrollTop = ind*defNum;
+            tbl.scrollTop = ind*this.dataTableService.defltRHgtNum;
             setTimeout( () => { this.setRowSelChecksPlacement(true); })
         }
     }
@@ -1419,19 +1676,17 @@ export class NgxDeebodata {
         }
     }
 
-    valEditFocusTo: number|null = null;
-
     handleValidatedCellEditFocus(cellData: any) {//{type: this.cell.dataType, value: this.cell.rawText}
         this.validatedEditType = cellData.type
         if(this.valEditFocusTo){
-            clearTimeout(this.valEditFocusTo)
+            this.valEditFocusTo.unsubscribe()
             this.valEditFocusTo = null
         }
         if(this.validatedEditType === "text"){//text w/ limited values
             this.currSelEditOpts = this.dataTableService.dataFilSrtTracker[this.dataTableService.currEditCol]["selDDVals"]?.
             filter( (g: any) => g.value !== "(Select All)").map( (s: any) => ({ ...s, selected: s.value === cellData.value }))
         }
-        this.valEditFocusTo = setTimeout( () => {
+        this.valEditFocusTo = timer(10).subscribe( () => {
             const rel = this.validatedEdit.nativeElement
             let el;
             const elD = <HTMLDivElement>document.querySelector(".relly.edit-input")
@@ -1447,13 +1702,17 @@ export class NgxDeebodata {
                 (el || elD).style.height = (cbds.height-2) + "px";
                 if(el){
                     el.value = cellData.type === "date" ? new Date(cellData.value)?.toISOString().split("T")[0] : cellData.value;
-                    setTimeout( () => { el.focus() })
+                    timer(0).subscribe( () => { el.focus(); setTimeout( () => { this.dataTableService.lockCellFocus.set(false) }) })
+                } else {
+                    this.dataTableService.lockCellFocus.set(false)
                 }
                 rel.classList.remove("invisible")
                 this.fCellDragger.nativeElement.style.left = (Math.ceil(cbds.left-rbds.left) + cbds.width - 4) + "px";
                 this.fCellDragger.nativeElement.style.top = (Math.ceil(cbds.bottom-rbds.top) - 4) + "px"
+            } else {
+                this.dataTableService.lockCellFocus.set(false)
             }
-        }, 50)
+        })
     }
 
     clearFCellDragger() {
@@ -1490,6 +1749,7 @@ export class NgxDeebodata {
      killValEdit() {
         this.validatedEditType = ""
         this.currSelEditOpts = []
+        this.dataTableService.lockCellFocus.set(false)
         this.validatedEdit.nativeElement.classList.add("invisible")
      }
 
@@ -1530,8 +1790,6 @@ export class NgxDeebodata {
                 targRow.dispatchEvent(mouseEvent)
                 targRow.removeEventListener("mousemove", execDragEOnDK)
                 setTimeout( () => {this.listenToCellDraggerMouseMove = false})
-                if(e.target.getBoundingClientRect().bottom > (this.dataTableService.tblBot-100))
-                    this.dataTableBody.nativeElement.scrollBy(0, this.dataTableService.dTblHeight/2)
             }
         }
     }
@@ -1642,11 +1900,11 @@ export class NgxDeebodata {
                     row.editedInDrag = true
                     cell = document.querySelector("#dataTableRow" + dragId + " .data-cell-" + this.common.elifyCol(this.dataTableService.currEditCol))    
                 }
-                if(els.length > 1){
-                    const dir = this.scrollDir === "down" ? 1 : -1;
-                    const toScl = dir*(Math.ceil((e.offsetY || 20))/2)
-                    this.dataTableBody.nativeElement.scrollBy(0, toScl)
-                }
+                // if(els.length > 1){
+                //     const dir = this.scrollDir === "down" ? 1 : -1;
+                //     const toScl = dir*(Math.ceil((e.offsetY || 20))/2)
+                //     this.dataTableBody.nativeElement.scrollBy(0, toScl)
+                // }
                 const fCellDragger = <HTMLElement>document.getElementsByClassName("focused-cell-dragger")[0]
                 const par = fCellDragger?.parentElement
                 if(cell && fCellDragger && par){
@@ -1837,7 +2095,7 @@ export class NgxDeebodata {
                 val = Math.ceil(parseInt(val))
             const rHgt = force ? val : Math.max(val, (parseInt(this.desRowHeight) || Math.ceil(row.getBoundingClientRect().height)))
             const useHgt = Math.floor(rHgt) + "px";
-            if(typeof row === "string" && this.tblDragService.colDragStartFrmCellTracker.row && this.tblDragService.colDragStartFrmCellTracker.ystart){
+            if(force || (typeof row === "string" && this.tblDragService.colDragStartFrmCellTracker.row && this.tblDragService.colDragStartFrmCellTracker.ystart)){
                 const drow = this.rows.find( r => r.id === row)
                 if(drow){
                     drow.height = useHgt
@@ -1845,14 +2103,9 @@ export class NgxDeebodata {
                         const item = this.dataTableService.mainData[drow?.index]
                         if(item){
                             const indx = this.dataTableService.findObjIndxInData(item, this.dataTableService.currFilData) + 1
-                            // const rNum = this.rowNos().find( r => r.number === indx)
-                            // if(rNum)
-                            //     rNum.height = useHgt
-                            this.rowNos.set(this.rowNos().map( (r) => {
-                                if(r.number === indx)
-                                    r.height = useHgt
-                                return r
-                            }))
+                            const rNum = this.rowNos.find( r => r.number === indx)
+                            if(rNum)
+                                rNum.height = useHgt
                         }
                     }                    
                 }
@@ -1974,8 +2227,9 @@ export class NgxDeebodata {
         this.rows = []
         this.aboveHgt.set(0)
         this.belowHgt.set(0)
-        this.rowNos.set([])
+        this.rowNos = []
         this.dtChecks = []
+        this.doRowsMod = 10;
         this.clearValidatedEdit(null, true)
         this.dataTableService.currMapping = {}
         if(!this.currGroupValues().length)//only if not grouped
@@ -1990,13 +2244,15 @@ export class NgxDeebodata {
         }
         this.lastElRowIndex = 0
         let n = 0
-        const defNum = parseInt(this.dataTableService.defltRHgt.replace(/[ ]?px/g, ""))
-        const init = Math.max(this.dataTableService.dTblHeight/defNum);
+        const defNum = this.dataTableService.defltRHgtNum
+        const init = Math.ceil(this.dataTableService.dTblHeight()/defNum)+this.rowElsPad;
         const len = this.dataTableService.currFilData.length;
         if(!len){//always just add 1
             this.allFilSortInfo.set(this.dataTableService.getAllFilSrtInfo())
             return setTimeout( () => { this.styleEmptyFilDataRow(tbody, tbodyX) })
         }
+        if(len >= 500000)
+            this.doRowsMod = 15
         if(this.currGroupValues().length){//don't add to rows here
             if(field)
                 this.columnOfInterest.set(field)
@@ -2053,21 +2309,23 @@ export class NgxDeebodata {
             }
             horizLim = Math.max(horizLim, (uCols.map( c => c.column).indexOf(field) + offst))
         }
+        let localRows = [];
         for(n; n < limit; n++){
             const item = this.dataTableService.currFilData[n]
             const index = !reset ? this.dataTableService.findObjIndxInData(item) : n
             if(index > -1){
                 const row: DataRow = { id: "dataTableRow" + index, index: index, width: this.useRowWid, cells: [], height: this.dataTableService.defltRHgt }
-                this.rows.push(row)
                 let k = 0
                 for(k; k < colLen; k++){
                     const col = uCols[k]?.column
                     if(col)
                         addCell(item[col], col, row, index, (k <= horizLim))
                 }
+                localRows.push(row)
                 this.dataTableService.currMapping[n] = index
             }
         }
+        this.rows = [...localRows]
         this.setLastRowIndex()
         this.allFilSortInfo.set(this.dataTableService.getAllFilSrtInfo())
         this.dataTableService.mapperWorkerId += 1//a reset but needs to incr so prev don't affect mapping 
@@ -2096,7 +2354,7 @@ export class NgxDeebodata {
                 }
             }
             this.dataTableService.setIdealColumnWidth.next(true)
-            setTimeout( () => { this.setRowSelChecksPlacement(); this.setHoldingCheckCls() })
+            timer(0).subscribe( () => { this.setRowSelChecksPlacement(); this.setHoldingCheckCls() })
         }
     }
 
@@ -2104,7 +2362,7 @@ export class NgxDeebodata {
         const row = <HTMLElement>document.getElementsByClassName("data-table-row-no-data")[0]
         if(row){
             row.style.width = this.dataTableHeaders.nativeElement.scrollWidth + "px"
-            setTimeout( () => tbody.scrollLeft = tbodyX, 100)
+            timer(100).subscribe( () => {tbody.scrollLeft = tbodyX})
         }
     }
 
@@ -2146,17 +2404,17 @@ export class NgxDeebodata {
             this.hiddenCols.push(col)
         else
             this.hiddenCols = this.hiddenCols.filter( c => c !== col)
-        setTimeout( () => { this.dataTableService.setTblBounds(); this.testHideMinBtn() })
-        setTimeout( () => { 
+        timer(0).subscribe( () => { this.dataTableService.setTblBounds(); this.testHideMinBtn() })
+        timer(750).subscribe( () => { 
             if(!fullClear || (fullClear && this.hiddenCols.length === 1)){
                 this.setTableWidthOnChange()
-                setTimeout( () => {
+                timer(0).subscribe( () => {
                     this.dataTableBody.nativeElement.scrollBy(1, 0)
                     this.scrollAllGBPanels()
                     this.setRowSelChecksPlacement()
                 })
             }
-        }, 750)
+        })
     }
 
     scrollAllGBPanels() {

@@ -14,30 +14,29 @@
 @if(open()){
     <div #panelDataGrid [id]="'panelDataGrid' + elifyGrouping" style="overflow: auto;margin-top: 3px" class="group-panel-grid panel-height"
     (scroll)="handleScroll($event)" (scrollend)="handleScrollEnd()">
-        <div #aboveArea [style.height]="aboveHgt + 'px'"></div>
-        @for(row of rows; track row.index){
-            <div [id]="row.id" class="data-table-row rows-for-{{elifyGrouping}}" [attr.data-index]="row.index"
-                [ngStyle]="{'width': row.width, 'height': row.height}" >
-                @for(cell of row.cells; track cell.column){
-                    @if(isScrolling){
-                        <div class="data-cell data-cell-{{common.elifyCol(cell.column)}}{{cell.specialColClass}}" [class.data-cell-riiight]="cell.dataType === 'number'"
-                        [ngClass]="{ 'col-item-freeze': cell.freeze, 'col-header-minimized': cell.minimized, 'holding-check': cell.column === dataTableService.firstCol }"
-                        [ngStyle]="{'width': cell.width || dataTableService.useColWid, 'height': row.height}" >{{cell.text}}@if(cell.html){<div class="mock-html"></div>}</div>
-                    } @else {
+        <div #aboveArea [ngStyle]="{'height': aboveHgt() + 'px', 'width': useRowWid}"></div>
+        <div [style.transform]="'translateY('+transY()+'px)'">
+            @for(row of rows; track $index){
+                <div [id]="row.id" class="data-table-row rows-for-{{elifyGrouping}}" [attr.data-index]="row.index"
+                    [ngStyle]="{'width': row.width, 'height': row.height}" >
+                    @for(cell of row.cells; track cell.column){
                         <app-data-cell
                         [cell]="cell" [rowId]="row.id" 
                         [noColResize]="true"
+                        [text]="cell.text || ''"
+                        [html]="cell.html || ''"
                         [rawText]="cell.rawText"
+                        [minimized]="cell.minimized"
                         [rowHeight]="row.height || ''"
                         [columnValClass]="cell.specialColClass"
                         [colWid]="cell.width || dataTableService.useColWid"
                         (height)="setSingleRowHgt($event, row.id)"
                         ></app-data-cell>
                     }
-                }
-            </div>
-        }
-        <div #belowArea [style.height]="belowHgt + 'px'"></div>
+                </div>
+            }
+        </div>
+        <div #belowArea [ngStyle]="{'height': belowHgt() + 'px', 'width': useRowWid}"></div>
         @if(!panelData.length){
             <div 
             class="data-table-row panel-height flex-center data-table-row-no-data" style="width: 100%; white-space: normal;">

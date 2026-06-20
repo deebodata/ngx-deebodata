@@ -4,8 +4,6 @@ Angular data grid with virtual scroll, integrated charts, row grouping, column r
 
 # Demos  
 
-- 40+ columns - https://deebodata.com/angular-data-grid  
-- 50k rows - https://deebodata.com/angular-data-grid?data=images
 - 100k rows - https://deebodata.com/angular-data-grid?data=sales 
 
 
@@ -14,11 +12,6 @@ Angular data grid with virtual scroll, integrated charts, row grouping, column r
 Install this package and use the full functionality when developing locally at http://localhost:4200
 
 To deploy to any live url, you need to obtain a **deployment license** for each developer on the project from https://deebodata.com/data-grid-checkout/angular  
-
-
-## Report Issues  
-  
-You can report an issue at https://deebodata.com/contact-us  
 
 
 ## Usage

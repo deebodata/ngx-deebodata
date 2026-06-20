@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, Output, ViewChild, EventEmitter, SimpleChanges, HostListener, input, signal, ChangeDetectorRef } from '@angular/core';
+import { Component, ElementRef, Input, Output, ViewChild, EventEmitter, HostListener, input, signal, ChangeDetectorRef, effect } from '@angular/core';
 import { CommonService } from '../../../services/common-service';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { DataTableService } from '../../../services/data-table-service';
@@ -6,6 +6,7 @@ import { DataRow } from '../../../interfaces/data-row';
 import { DataCellComponent } from '../data-cell/data-cell';
 import { DataCell } from '../../../interfaces/data-cell';
 import { TableDragService } from '../../../services/table-drag-service';
+import { timer } from 'rxjs';
 
 @Component({
   selector: 'app-row-group-panel',
@@ -17,15 +18,8 @@ export class RowGroupPanel {
 
   @HostListener('window:mouseup', ['$event'])
   onWindowMouseUp(e: MouseEvent) {
-      if(this.open()){
-        setTimeout( () => { 
-            const pEl = this.panelDataGrid?.nativeElement
-            if(pEl){
-                pEl.scrollBy(0, 1);
-                pEl.scrollBy(0, -1);
-            }
-        } )
-      }
+      if(this.open())
+        this.handleScrlBarDrag()
   }
 
   init = true
@@ -39,14 +33,20 @@ export class RowGroupPanel {
   panelData: any[] = []
   tblTop: number = 0
   tblBot: number = 0
-  aboveHgt: number = 0;
-  belowHgt: number = 0;
+  aboveHgt = signal<number>(0);
+  belowHgt = signal<number>(0);
   rowNums: number[] = []
   changedIds: string[] = []
   scrollDir: string = "down"
   lastElRowIndex: number = 0;
+  transY =signal<number>(0);
+  finishScrollTO: any = null;
+  valEditFocusTo: any = null;
   horizRest = input<number>(0)
   colOfInt = input<string>("")
+  dtr: string = "";
+  rowElsPad = 1;
+  doRowsMod: number = 10;
   @Input() groupValue: string = ""
   @Input() useRowWid: string = ""
   @Input() maxCols: number = 0
@@ -64,19 +64,19 @@ export class RowGroupPanel {
               private tblDragService: TableDragService,
               public dataTableService: DataTableService,
               private _cd: ChangeDetectorRef,
-  ) {}
-
-  ngOnChanges(changes: SimpleChanges) {
-    if(!this.init && this.open() && changes){
-      if(changes["horizRest"]?.currentValue)
-        this.setHorizScrPos()
-    }
+  ) {
+    effect(() => {
+        if(this.open())
+            this.setHorizScrPos()
+    })
   }
 
   ngOnInit() {
     this.uiGroupValue = this.common.titleCase(this.groupValue)
     this.elifyGrouping = this.common.elifyCol(this.groupValue)
     this.count = this.dataTableService.currFilData.filter( d => d[this.dataTableService.currGroup] === this.groupValue).length
+    this.dtr = this.common.elifyCol(this.groupValue) + "dataTableRow";
+    this.dataTableService.groupedBoundsChange.subscribe( e => { this.setTblBot() })
     this.dataTableService.gridScrollEndWhileGrouped.subscribe( e => { this.setTblBot() })
     this.dataTableService.gridEventWhileGrouped.subscribe( e => { 
       const nowOpen = this.open()
@@ -88,18 +88,17 @@ export class RowGroupPanel {
       if(nowOpen)
         setTimeout( () => { this.openGroup() })
     })//just close
-    this.dataTableService.mouseupWhileGrouped.subscribe( e => {
-        if(this.open()){
-          setTimeout( () => { 
-            const pEl = this.panelDataGrid?.nativeElement
-            if(pEl){
-                pEl.scrollBy(0, 1);
-                pEl.scrollBy(0, -1);
-            }
-          } )
-        }
-    })
-    this.init = false;
+    // this.dataTableService.mouseupWhileGrouped.subscribe( e => {
+    //     if(this.open()){
+    //       setTimeout( () => { 
+    //         const pEl = this.panelDataGrid?.nativeElement
+    //         if(pEl){
+    //             pEl.scrollBy(0, 1);
+    //             pEl.scrollBy(0, -1);
+    //         }
+    //       } )
+    //     }
+    // })
   }
 
   openGroup() {
@@ -108,15 +107,15 @@ export class RowGroupPanel {
         if(!this.open()){
           this.rows = []
           this.panelData = []
-          this.aboveHgt = 0;
-          this.belowHgt = 0;
+          this.aboveHgt.set(0);
+          this.belowHgt.set(0);
           this.rowNums = []
         } else {
           this.panelData = this.dataTableService.currFilData.filter( d => d[this.dataTableService.currGroup] === this.groupValue)
           this.count = this.panelData.length
           let n = 0
-          const defNum = parseInt(this.dataTableService.defltRHgt.replace(/[ ]?px/g, ""))
-          const init = Math.max(this.dataTableService.dTblHeight/defNum);
+          const defNum = this.dataTableService.defltRHgtNum
+          const init = Math.ceil(400/defNum)+this.rowElsPad;
           const addCell = (text: any, prop: string | null, row: DataRow | null, visible: boolean) => {
               if(prop && row){
                   const useProp = this.dataTableService.dataFilSrtTracker[prop]
@@ -156,32 +155,35 @@ export class RowGroupPanel {
                 horizLim = this.columns.indexOf(lvis) + 1
             }
           }
+          let localRows: DataRow[] = [];
           for(n; n < limit; n++){
             const item = this.panelData[n]
             const index = this.dataTableService.currMapping[n] || this.dataTableService.findObjIndxInData(item)
             if(index > -1){
-              this.rows.push({ id: "dataTableRow" + index, index: index, width: this.useRowWid, cells: [], height: this.dataTableService.defltRHgt })
+              const row: DataRow = { id: this.dtr + index, index: index, width: this.useRowWid, cells: [], height: this.dataTableService.defltRHgt }
               let k = 0
               for(k; k < colLen; k++){
                 const col = this.columns?.[k]
                 if(col)
-                    addCell(item[col], col, this.rows[n], (k <= horizLim))
+                    addCell(item[col], col, row, (k <= horizLim))
               }
+              localRows.push(row)
             }
           }
+          this.rows = [...localRows]
           this.setLastRowIndex()
-          setTimeout( () => { 
+          timer(250).subscribe( () => { 
               this.setRowNums()
               if(this.count > init){
                   let total = 0
                   let z = this.lastElRowIndex + 1
                   for(z; z < this.count; z++)
                     total += 1
-                  this.belowHgt = total*defNum
+                  this.belowHgt.set(total*defNum)
               }
               this.setHorizScrPos()
               this.openEvt.emit("row-group-panel-" + this.elifyGrouping)
-              setTimeout( () => { 
+              timer(0).subscribe( () => { 
                 this.setTblBot(); 
                 const pEl = this.panelDataGrid?.nativeElement
                 if(pEl){
@@ -191,7 +193,7 @@ export class RowGroupPanel {
                 this.setRowNumPlacement()
                 this._cd.detectChanges()
               })
-            }, 250)
+            })
           }
         })
     }
@@ -213,8 +215,7 @@ export class RowGroupPanel {
 
   setLastRowIndex() {
       const realMax = this.panelData.length - 1
-      const defNum = parseInt(this.dataTableService.defltRHgt.replace(/[ ]?px/g, ""))
-      const wannabeMax = (this.rows.length - 1) + Math.floor(this.aboveHgt/defNum)
+      const wannabeMax = (this.rows.length - 1) + Math.floor(this.aboveHgt()/this.dataTableService.defltRHgtNum)
       this.lastElRowIndex = Math.min(wannabeMax, realMax)
       return this.lastElRowIndex;
   }
@@ -265,7 +266,7 @@ export class RowGroupPanel {
                         if(rbds){
                             const hh = (rbds.height/2)
                             const top = Math.floor(((rbds.bottom - (hh+radd)) - tTop))
-                            num.style.top = top + "px"
+                            num.style.top = (top-this.transY()) + "px"
                             if(rbds.top < (tTop-2) || (rbds.bottom > (tTop + tbds.height+1)) || (dtBody.scrollLeft > 35 && !col1Frozen)){
                                 num.classList.add("hide")
                                 continue
@@ -279,19 +280,52 @@ export class RowGroupPanel {
         }
     }
 
+    handleScrlBarDrag() {
+        this.dataTableService.mouseIsDown = false;
+        if(!this.finishScrollTO){
+            timer(0).subscribe(() => {this.completeScroll(); this.dataTableService.listenForScroll.set(true);})
+        } else {
+            this.dataTableService.listenForScroll.set(true);
+        }
+    }
+
+    setAllRowsDefHgt() {
+        let i = 0
+        const len = this.rows.length
+        for(i; i < len; i++)
+            this.setSingleRowHgt(this.dataTableService.defltRHgtNum, this.rows[i].id, true) 
+    }
+
+    completeScroll() {
+        this.isScrolling = false
+        this.finishScrollTO = null
+        const dtb = this.panelDataGrid?.nativeElement
+        if(dtb){
+            const lfs = this.dataTableService.listenForScroll()
+            this.execVertScrollUp(this.columns, this.columns.length, dtb.scrollTop, true)
+            this.handleScrollEnd()
+            this.execHorizScroll(dtb.scrollLeft)
+            if(lfs && this.rows.some( r => r.height !== this.dataTableService.defltRHgt))
+                this.setAllRowsDefHgt()
+            if(!lfs)
+                timer(0).subscribe(() => {this.dataTableService.listenForScroll.set(true) });
+        }
+    }
+
   handleScroll(event: any) {
     const top = event.target.scrollTop
     const left = event.target.scrollLeft
     /*horiz scroll*/
-    requestAnimationFrame( () => { this.execHorizScroll(left) })
+    this.execHorizScroll(left)
     /*horiz scroll*/
     /*vert scroll*/
-    if(top === this.verticalRest){
-        this.isScrolling = false
+    if(top === this.verticalRest || !this.dataTableService.listenForScroll())
         return this.setRowNumPlacement();
-    }
     this.isScrolling = true
-    requestAnimationFrame( () => { this.execVertScroll(top) })
+    this.execVertScroll(top)
+    if(this.finishScrollTO)
+        this.finishScrollTO.unsubscribe()
+    this.finishScrollTO = timer(150).subscribe( () => { this.completeScroll() })  
     /*vert scroll*/
   }
 
@@ -304,26 +338,28 @@ export class RowGroupPanel {
     }
  }
 
+    fixRowContainer(transY: number) {
+        this.transY.set(transY);
+    }
+
     execVertScroll(top: number) {
         if(top >= this.verticalRest){
-            this.execVertScrollDown(this.columns, this.columns.length)
-            this.clearAboveFoldRows()
             this.scrollDir = "down"
+            this.execVertScrollDown(this.columns, this.columns.length, top)
         } else {//scrolling back up
-            this.execVertScrollUp(this.columns, this.columns.length)
-            this.clearBelowFoldRows()
             this.scrollDir = "up"
+            this.execVertScrollUp(this.columns, this.columns.length, top)
         }
         this.verticalRest = top
-        this.setRowNumPlacement()
     }
 
     handleScrollEnd(): any {
+        this.fixRowContainer(0)
         this.isScrolling = false
-        setTimeout( () => { 
+        timer(0).subscribe( () => { 
             this.setColsOnVisScreen()
             this.setRowNumPlacement()
-            setTimeout( () => { this.cleanUpPossibles(); this._cd.detectChanges() })
+            timer(0).subscribe( () => { this.cleanUpPossibles(); })
         })
     }
 
@@ -346,6 +382,24 @@ export class RowGroupPanel {
           specialColClass: (colStyle ? (colStyle + this.common.elifyCol(useTxt.value)) : ""),
       }
   }
+
+  setCellsOnVertScroll(text: string, prop: string, row: DataRow, vis: boolean) {
+        const useProp = this.dataTableService.dataFilSrtTracker[prop]
+        const notNum = (this.dataTableService.figureFilterType(prop) != "number" || /(year|yr|fy)/g.test(prop.toLocaleLowerCase())) ? true : false
+        const useTxt = this.dataTableService.figureCellText(text, notNum, useProp["colCellSymbol"])
+        const colStyle = this.dataTableService.getColumnStyle(prop)
+        row.cells = row.cells?.map( c => {
+            if(c.column === prop){
+                c.visible = vis;
+                c.rawText = text
+                c.specialColClass = (colStyle ? (colStyle + this.common.elifyCol(useTxt.value)) : "");
+                c.text = useTxt.prop === "textContent" ? useTxt.value : "";
+                c.html = useTxt.prop !== "textContent" ? useTxt.value : "";
+                return c
+            }
+            return c
+        })
+    }
 
       execHorizBodyScroll() {
         let i = 0;
@@ -392,11 +446,11 @@ export class RowGroupPanel {
                 }
             }
         }
-                setTimeout( () => { 
+                timer(50).subscribe( () => { 
                     this.dataTableService.setIdealColumnWidth.next(true); 
                     this.setColsOnVisScreen() 
-                    setTimeout( () => { this.cleanUpPossibles() }, 100)
-                }, 50)
+                    timer(50).subscribe( () => { this.cleanUpPossibles() })
+                })
     }
 
     cleanUpPossibles() {
@@ -424,32 +478,107 @@ export class RowGroupPanel {
         }
     }
 
-  execVertScrollDown(cols: string[], colLen: number) {
-        let canAdd = 0
-        const vlen = this.dataTableService.visibleCols.length
-        const lastVisInd = this.columns.indexOf(this.dataTableService.visibleCols[(vlen-1)]) + 1
-        const bel = this.belowArea?.nativeElement
-        const bbds = bel?.getBoundingClientRect()
-        if(!bbds)
-            return
-        const rTop = (bbds?.top - this.verticalRest)
-        const gap = this.tblBot - rTop
-        const defNum = parseInt(this.dataTableService.defltRHgt.replace(/[ ]?px/g, ""))
-        if(gap > 0){
+  applyToDomRows(rows: any[], rnums: number[], cols: string[], colLen: number, lastVisInd: number, dir: string, defNum: number, newRows: number) {
+        const len = this.rows.length
+        let nrowsAcctFor = 0
+        if(dir === "down"){
+            let i = 0;
+            let ahToAdd: number = 0;
+            let bhToSub: number = 0;
+            for(i; i < len; i++){
+                const row = this.rows[i]//move the top x num of dom rows to the bottom
+                const vrow = rows[i]//{index: index, data: item}
+                if(vrow && vrow.index !== row.index){
+                    const index = vrow.index
+                    const doIt = index > -1;
+                    if(doIt){
+                        for(let k = (colLen-1); k >= 0; k--){
+                            const col = cols[k]
+                            if(col)
+                                this.setCellsOnVertScroll(vrow.data[col], col, row, (k <= lastVisInd))//prepend
+                        }
+                    }
+                    if(nrowsAcctFor < newRows){
+                        ahToAdd += defNum
+                        bhToSub += defNum
+                    }
+                    if(doIt){
+                        row.id = this.dtr + index
+                        row.index = index
+                    }
+                    nrowsAcctFor++;
+                }
+            }
+            if(ahToAdd)
+                this.aboveHgt.set((this.aboveHgt() + ahToAdd))
+            if(bhToSub)
+                this.belowHgt.set(Math.max(0, (this.belowHgt() - bhToSub)))
+        } else {
+            let v = 0
+            const ulen = (len-1)
+            let ahToSub: number = 0;
+            let bhToAdd: number = 0;
+            for(var o = ulen; o >= 0; o--){
+                const row = this.rows[o]
+                const vrow = rows[v]//{index: index, data: item}
+                if(vrow && vrow.index !== row.index){
+                    const index = vrow.index
+                    const doIt = index > -1;
+                    if(doIt){
+                        for(let k = (colLen-1); k >= 0; k--){
+                            const col = cols[k]
+                            if(col)
+                                this.setCellsOnVertScroll(vrow.data[col], col, row, (k <= lastVisInd))//prepend
+                        }
+                    }
+                    if(nrowsAcctFor < newRows){
+                        ahToSub += defNum;
+                        bhToAdd += defNum
+                    }
+                    if(doIt){
+                        row.id = this.dtr + index
+                        row.index = index
+                    }
+                    nrowsAcctFor++;
+                }
+                v++
+            }
+            if(ahToSub)
+                this.aboveHgt.set(Math.max(0, (this.aboveHgt() - ahToSub)))
+            if(bhToAdd)
+                this.belowHgt.set((this.belowHgt() + bhToAdd))
+        }
+        this.rowNums = [...rnums]
+        this.finishApplyingDomRows()
+    }
+
+    getLastRowBot(): number {
+        const els = document.getElementsByClassName("rows-for-" + this.elifyGrouping)
+        return els[els.length-1]?.getBoundingClientRect()?.bottom || this.tblBot;
+    }
+
+    execVertScrollDown(cols: string[], colLen: number, currTop: number, force?: boolean) {
+        let gap = this.tblBot - this.getLastRowBot();
+        this.fixRowContainer(gap)
+        timer(0).subscribe( () => {
             let h = 0
+            let rows = []
+            let canAdd = 0
+            const maxRows = this.rows.length
+            const doRows = force || (!this.isScrolling && (gap == 0 || !this.dataTableService.mouseIsDown)) || currTop%this.doRowsMod === 0;
+            const bel = this.belowArea.nativeElement
+            const bbds = bel.getBoundingClientRect()
+            const btop = bbds.top - gap
+            const defNum = this.dataTableService.defltRHgtNum
             let z = this.lastElRowIndex + 1
-            const last = <HTMLElement>document.querySelector("#panelDataGrid" + this.elifyGrouping + " #dataTableRow" + this.lastElRowIndex)
-            if(last && this.dataTableService.elIsBelowFold(last, this.tblBot))
-                return;
             let bhToSub = 0
             let ahToAdd = 0
-            const rowsInGap = Math.ceil(gap/defNum)
-            canAdd = z+(rowsInGap)
             let numsToAdd: number[] = []
-            let rowsToAdd: DataRow[] = []
+            const rowsInGap = Math.ceil(gap/defNum)
+            canAdd = z+rowsInGap
             const goTo = Math.min(this.panelData.length, canAdd)
             for(z; z < goTo; z++){
-                const wldBeElTop = bbds.top + (defNum*h);
+                const wldBeElTop = btop + (defNum*h);
                 const wldBeElBot = wldBeElTop+defNum
                 if(wldBeElBot < this.tblTop){
                     ahToAdd += defNum
@@ -457,55 +586,56 @@ export class RowGroupPanel {
                 } else {
                     if(wldBeElTop <= this.tblBot){
                         const item = this.panelData[z]
-                        const index = this.dataTableService.currMapping[z] || this.dataTableService.findObjIndxInData(item)
-                        if(index > -1 && !this.rows.find( r => r.index === index)){
-                            const nRow: DataRow = { id: "dataTableRow" + index, index: index, width: this.useRowWid, cells: [], height: this.dataTableService.defltRHgt }
-                            let k = 0
-                            let cells: DataCell[] = []
-                            for(k; k < colLen; k++){
-                                const col = cols[k]
-                                const cell = this.addCell(item[col], col, (k <= lastVisInd))
-                                if(typeof cell !== "string")
-                                    cells.push(cell)
-                            }
-                            nRow.cells = [...cells]
-                            rowsToAdd.push(nRow)
-                            numsToAdd.push((z+1))//just do it
-                            bhToSub += defNum
-                        }
+                        const index = this.dataTableService.currMapping[z] || (doRows ? this.dataTableService.findObjIndxInData(item) : -1)
+                        if(rows.length < maxRows)
+                            rows.push({index: index, data: item, elInd: z})
                     }
                 }
                 h += 1
             }
-            if(rowsToAdd.length)
-                this.rows = [...this.rows, ...rowsToAdd]
             if(bhToSub)
-                this.belowHgt -= bhToSub
-            if(this.showRowNumbers)
-                this.rowNums = [...this.rowNums, ...numsToAdd]
+                this.belowHgt.set(Math.max(0, (this.belowHgt() - bhToSub)))
             if(ahToAdd)
-                this.aboveHgt += ahToAdd
-            this.setLastRowIndex()
-        }
-  }
+                this.aboveHgt.set((this.aboveHgt() + ahToAdd))
+            const repl = [...rows].length;//only new rows
+            const needsToFill = maxRows-repl;
+            if(needsToFill){
+                let f = !rows.length ? this.lastElRowIndex : (rows[0].elInd-1);
+                let fgoto = f-needsToFill;
+                for(f; f > fgoto; f--){
+                    const item = this.panelData[f]
+                    const index = this.dataTableService.currMapping[f] || (doRows ? this.dataTableService.findObjIndxInData(item) : -1);
+                    rows.unshift({index: index, data: item, elInd: f})
+                }
+            }
+            numsToAdd = rows.map( r => (r.elInd+1))
+            const vlen = this.dataTableService.visibleCols.length
+            const lastVisInd = cols.indexOf(this.dataTableService.visibleCols[(vlen-1)]) + 1
+            this.applyToDomRows(rows, numsToAdd, cols, colLen, lastVisInd, "down", defNum, repl)
+        })
+    }
 
-  execVertScrollUp(cols: string[], colLen: number) {
-        const vlen = this.dataTableService.visibleCols.length
-        const lastVisInd = this.columns.indexOf(this.dataTableService.visibleCols[(vlen-1)]) + 1;
-        const ael = this.aboveArea?.nativeElement
-        const abds = ael?.getBoundingClientRect()
-        const defNum = parseInt(this.dataTableService.defltRHgt.replace(/[ ]?px/g, ""))
-        const rbot = abds?.bottom || 0
-        const gap = rbot - this.tblTop
-        if(gap > 0){
+    getFirstRowTop(): number {
+        return document.getElementsByClassName("rows-for-" + this.elifyGrouping)[0]?.getBoundingClientRect().top || this.tblTop;
+    }
+
+    execVertScrollUp(cols: string[], colLen: number, currTop: number, force?: boolean) {
+        let gap = this.getFirstRowTop() - this.tblTop;
+        this.fixRowContainer(-gap)
+        timer(0).subscribe( () => {
             let h = 0
-            const rlen = this.rows.length
-            let z = (this.lastElRowIndex - rlen)
-            if(z < 0)
-                return
+            let rows = []
+            const ael = this.aboveArea.nativeElement
+            const abds = ael.getBoundingClientRect()
+            const rbot = abds.bottom + gap;
+            const maxRows = this.rows.length
+            const defNum = this.dataTableService.defltRHgtNum
+            let z = (this.lastElRowIndex - maxRows)
             let bhToAdd = 0
             let ahToSub = 0
-            const rowsInGap = Math.ceil(gap/defNum)
+            let numsToAdd: number[] = []
+            const doRows = force || (!this.isScrolling && (gap == 0 || !this.dataTableService.mouseIsDown)) || currTop%this.doRowsMod === 0;
+            const rowsInGap = Math.floor(gap/defNum)
             const min = Math.max(0, (z-rowsInGap))
             for(z; z >= min; z--){
                 const wldBeElBot = rbot - (defNum*h);
@@ -516,80 +646,51 @@ export class RowGroupPanel {
                 } else {
                     if(wldBeElBot > this.tblTop){
                         const item = this.panelData[z]
-                        const index = this.dataTableService.currMapping[z] || this.dataTableService.findObjIndxInData(item)
-                        if(index > -1){
-                            let k = 0
-                            const nRow: DataRow = { id: "dataTableRow" + index, index: index, width: this.useRowWid, cells: [], height: this.dataTableService.defltRHgt }
-                            let cells: DataCell[] = []
-                            for(k; k < colLen; k++){
-                                const col = cols[k]
-                                const cell = this.addCell(item[col], col, (k <= lastVisInd))
-                                if(typeof cell !== "string")
-                                    cells.push(cell)
-                            }
-                            nRow.cells = [...cells]
-                            this.rows = [nRow, ...this.rows]
-                            if(this.showRowNumbers)
-                                this.rowNums = [(z+1), ...this.rowNums]
-                            ahToSub += defNum
-                        }
+                        const index = this.dataTableService.currMapping[z] || (doRows ? this.dataTableService.findObjIndxInData(item) : -1)
+                        if(rows.length < maxRows)
+                            rows.push({index: index, data: item, elInd: z})
                     }
                 }
                 h += 1
             }
-            if(ahToSub){
-                this.aboveHgt -= ahToSub
-            }
+            if(ahToSub)
+                this.aboveHgt.set(Math.max(0, (this.aboveHgt() - ahToSub)))
             if(bhToAdd)
-                this.belowHgt += bhToAdd
-        }
-  }
-
-  clearAboveFoldRows() {
-        const els = this.rows.filter( r => this.dataTableService.elIsAboveFold(document.getElementById(r.id), this.tblTop))
-        const justids = els.map( e => e.id)
-        const changes = justids.length
-        if(changes > 0){
-            const justindx = els.map( (e, i) => i)
-            const defNum = parseInt(this.dataTableService.defltRHgt.replace(/[ ]?px/g, ""))
-            this.rows = this.rows.filter( r => !justids.includes(r.id))
-            if(this.showRowNumbers)
-                this.rowNums = this.rowNums.filter( (c, i) => !justindx.includes(i))
-            const item = this.dataTableService.mainData[(this.rows[0]?.index || -1)]
-            if(item)
-                this.aboveHgt = this.dataTableService.findObjIndxInData(item, this.panelData)*defNum
-        }
+                this.belowHgt.set((this.belowHgt() + bhToAdd))
+            const repl = [...rows].length;//only new rows
+            const needsToFill = maxRows-repl;
+            if(needsToFill){
+                let f = (!rows.length ? (this.lastElRowIndex - maxRows) : rows[0].elInd)+1;
+                let fgoto = f+needsToFill;
+                for(f; f < fgoto; f++){
+                    const item = this.panelData[f]
+                    const index = this.dataTableService.currMapping[f] || (doRows ? this.dataTableService.findObjIndxInData(item) : -1);
+                    rows.unshift({index: index, data: item, elInd: f})
+                }
+            }
+            numsToAdd = rows.map( r => (r.elInd+1)).sort((a, b) => a - b)
+            const vlen = this.dataTableService.visibleCols.length
+            const lastVisInd = cols.indexOf(this.dataTableService.visibleCols[(vlen-1)]) + 1;
+            this.applyToDomRows(rows, numsToAdd, cols, colLen, lastVisInd, "up", defNum, repl)
+        })
     }
 
-    clearBelowFoldRows() {
-        const els = this.rows.filter( r => this.dataTableService.elIsBelowFold(document.getElementById(r.id), this.tblBot))
-        const justids = els.map( e => e.id)
-        let changes = justids.length
-        if(changes > 0){
-            const defNum = parseInt(this.dataTableService.defltRHgt.replace(/[ ]?px/g, ""))
-            this.rows = this.rows.filter( r => !justids.includes(r.id))
-            if(this.showRowNumbers){
-                for(let p = (changes-1); p >= 0; p--)
-                    this.rowNums.pop()
-            }
-            const rlen = this.rows.length
-            const item = this.dataTableService.mainData[(this.rows[(rlen-1)]?.index || -1)]
-            if(item)
-                this.belowHgt = ((this.panelData.length-1)-this.dataTableService.findObjIndxInData(item, this.panelData))*defNum
-            this.setLastRowIndex()
-        }
+    finishApplyingDomRows() {
+        this.setRowNumPlacement()
+        this.fixRowContainer(0)
+        this.setLastRowIndex()
     }
 
 //   execCellEdit(event: any) {//{ element: el, column: this.cell.column, value: val }
 //     this.cellEdit.emit(event)
 //   }
 
-  setSingleRowHgt(val: any, row?: any) {
+  setSingleRowHgt(val: any, row?: any, force?: boolean) {
       if(val && typeof val === "string")
           val = Math.ceil(parseInt(val))
       const rHgt = val
       const useHgt = Math.floor(rHgt) + "px";
-      if(typeof row === "string" && this.tblDragService.colDragStartFrmCellTracker.row && this.tblDragService.colDragStartFrmCellTracker.ystart){
+      if(force || (typeof row === "string" && this.tblDragService.colDragStartFrmCellTracker.row && this.tblDragService.colDragStartFrmCellTracker.ystart)){
           const drow = this.rows.find( r => r.id === row)
           if(drow)
               drow.height = useHgt
