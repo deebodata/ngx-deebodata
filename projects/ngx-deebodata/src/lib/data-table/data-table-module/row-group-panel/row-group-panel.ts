@@ -303,7 +303,6 @@ export class RowGroupPanel {
         if(dtb){
             const lfs = this.dataTableService.listenForScroll()
             this.execVertScrollUp(this.columns, this.columns.length, dtb.scrollTop, true)
-            this.handleScrollEnd()
             this.execHorizScroll(dtb.scrollLeft)
             if(lfs && this.rows.some( r => r.height !== this.dataTableService.defltRHgt))
                 this.setAllRowsDefHgt()
@@ -325,7 +324,7 @@ export class RowGroupPanel {
     this.execVertScroll(top)
     if(this.finishScrollTO)
         this.finishScrollTO.unsubscribe()
-    this.finishScrollTO = timer(150).subscribe( () => { this.completeScroll() })  
+    this.finishScrollTO = timer(100).subscribe( () => { this.completeScroll() })  
     /*vert scroll*/
   }
 
@@ -478,7 +477,7 @@ export class RowGroupPanel {
         }
     }
 
-  applyToDomRows(rows: any[], rnums: number[], cols: string[], colLen: number, lastVisInd: number, dir: string, defNum: number, newRows: number) {
+  applyToDomRows(rows: any[], rnums: number[], cols: string[], colLen: number, lastVisInd: number, dir: string, defNum: number, newRows: number, force?: boolean) {
         const len = this.rows.length
         let nrowsAcctFor = 0
         if(dir === "down"){
@@ -549,7 +548,7 @@ export class RowGroupPanel {
                 this.belowHgt.set((this.belowHgt() + bhToAdd))
         }
         this.rowNums = [...rnums]
-        this.finishApplyingDomRows()
+        this.finishApplyingDomRows(force)
     }
 
     getLastRowBot(): number {
@@ -671,14 +670,17 @@ export class RowGroupPanel {
             numsToAdd = rows.map( r => (r.elInd+1)).sort((a, b) => a - b)
             const vlen = this.dataTableService.visibleCols.length
             const lastVisInd = cols.indexOf(this.dataTableService.visibleCols[(vlen-1)]) + 1;
-            this.applyToDomRows(rows, numsToAdd, cols, colLen, lastVisInd, "up", defNum, repl)
+            this.applyToDomRows(rows, numsToAdd, cols, colLen, lastVisInd, "up", defNum, repl, force)
         })
     }
 
-    finishApplyingDomRows() {
+    finishApplyingDomRows(force?: boolean) {
         this.setRowNumPlacement()
         this.fixRowContainer(0)
         this.setLastRowIndex()
+        if(force && !this.isScrolling){
+            this.handleScrollEnd()
+        }
     }
 
 //   execCellEdit(event: any) {//{ element: el, column: this.cell.column, value: val }

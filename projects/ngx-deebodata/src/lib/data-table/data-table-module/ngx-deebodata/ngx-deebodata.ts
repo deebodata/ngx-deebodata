@@ -1247,7 +1247,6 @@ export class NgxDeebodata {
                 this.execVertScrollUp(this.columnNames, this.columnNames.length, dtb.scrollTop, true)
             else
                 this.execVertScrollDown(this.columnNames, this.columnNames.length, dtb.scrollTop, true)
-            this.handleScrollEnd()
             this.execHorizScroll(dtb.scrollLeft)
             if(lfs && this.rows.some( r => r.height !== this.dataTableService.defltRHgt))
                 this.setAllRowsDefHgt()
@@ -1278,7 +1277,7 @@ export class NgxDeebodata {
             this.clearValidatedEdit()
           if(this.finishScrollTO)
               this.finishScrollTO.unsubscribe()
-          this.finishScrollTO = timer(150).subscribe( () => { this.completeScroll() })  
+          this.finishScrollTO = timer(100).subscribe( () => { this.completeScroll() })  
         }
 
         execHorizScroll(left: number) {
@@ -1449,7 +1448,7 @@ export class NgxDeebodata {
         }
     }
 
-    applyToDomRows(rows: any[], cols: string[], colLen: number, lastVisInd: number, dir: string, defNum: number, newRows: number) {
+    applyToDomRows(rows: any[], cols: string[], colLen: number, lastVisInd: number, dir: string, defNum: number, newRows: number, force?: boolean) {
         const len = this.rows.length
         let nrowsAcctFor = 0
         let chks: number[] = []
@@ -1528,7 +1527,7 @@ export class NgxDeebodata {
             if(bhToAdd)
                 this.belowHgt.set((this.belowHgt() + bhToAdd))
         }
-        this.finishApplyingDomRows()
+        this.finishApplyingDomRows(force)
     }
 
     getLastRowBot(): number {
@@ -1588,7 +1587,7 @@ export class NgxDeebodata {
             }
             const vlen = this.dataTableService.visibleCols.length
             const lastVisInd = cols.indexOf(this.dataTableService.visibleCols[(vlen-1)]) + 1
-            this.applyToDomRows(rows, cols, colLen, lastVisInd, "down", defNum, repl)
+            this.applyToDomRows(rows, cols, colLen, lastVisInd, "down", defNum, repl, force)
         })
     }
 
@@ -1646,15 +1645,17 @@ export class NgxDeebodata {
             }
             const vlen = this.dataTableService.visibleCols.length
             const lastVisInd = cols.indexOf(this.dataTableService.visibleCols[(vlen-1)]) + 1;
-            this.applyToDomRows(rows, cols, colLen, lastVisInd, "up", defNum, repl)
+            this.applyToDomRows(rows, cols, colLen, lastVisInd, "up", defNum, repl, force)
         })
     }
 
-    finishApplyingDomRows() {
+    finishApplyingDomRows(force?: boolean) {
         this.setRowNumbers()
         this.fixRowContainer(0)
         this.setLastRowIndex()
         this.cleanRowChecks()
+        if(force && !this.isScrolling)
+            this.handleScrollEnd()
     }
 
     jumpToRow(row: number) {

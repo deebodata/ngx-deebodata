@@ -60,6 +60,28 @@ export class App {
 ></ngx-deebodata>
 ```
 
+**Component Input API**
+
+| Input | Type | Default | Description
+|----------|----------|----------|----------|
+| `editable` | `boolean`  | `true`   | Allows cells to be edited   |
+| `rowNumbers` | `boolean`   | `true`   | Show row numbers on left hand side of grid   |
+| `data` | `signal<any[]>`   | `[]`   | signal Array of objects to display   |
+| `color1` | `string`   | `""`   | Theme color 1 (css, hex, rgb)   |
+| `color2` | `string`   | `""`   | Theme color 2 (css, hex, rgb)   |
+| `primaryKey` | `string`   | `""`   | primary key of your data set, helps performance to add it   |
+| `defRowHgt` | `string`   | `50px`   | default row height (px)   |
+| `defGridHgt` | `number`   | `500`   | default grid height in px   |
+| `licenseKey` | `string`   | `""`   | License key for non localhost deployment   |
+| `pieGraphColors` | `string[]`   | `[]`   | list of colors for pie graph sections if applicable (css, hex, rgb)   |
+| `removePieCovers` | `boolean` \| `string[]`   | `false`   | false removes all pie graph covers, a list of string column names removes only those columns' covers   |
+| `altRowColor` | `string`   | `""`   | alternate row color (css, hex, rgb)   |
+| `myColumnStyles` | `ColumnStyles[]`   | `[]`   | pass css styles to specific values in a column   |
+| `myColumnValueColors` | `ColumnValueColors[]`   | `[]`   | assign a color to a value in pie, line, and bar graphs   |
+| `forceGrouping` | `string[]`   | `[]`   | array of column names to force grouping - gives dropdown filter & pie graphs for the column   |    
+-  
+
+
 It's best to pass hex or rgb colors to **color1, color2, pieGraphColors, & altRowColor,** but css colors work too  
 
 Always pass a **px** string value to defRowHgt like '50px'
