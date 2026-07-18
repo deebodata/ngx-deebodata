@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonService } from '../../../services/common-service';
 import { DataTableService } from '../../../services/data-table-service';
 import { CommonModule } from '@angular/common';
@@ -11,6 +11,7 @@ import { LineGraphComponent } from '../line-graph-component/line-graph-component
   selector: 'app-column-chart',
   imports: [ CommonModule, NumValueDistroComponent, PieGraphComponent, BarGraphComponent, LineGraphComponent, ],
   templateUrl: './column-chart.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./column-chart.css', '../../../styles.css']
 })
 export class ColumnChart {

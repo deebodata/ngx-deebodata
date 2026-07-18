@@ -1,4 +1,4 @@
-import { Component, Input, ViewChild, ElementRef, HostListener, signal } from '@angular/core';
+import { Component, Input, ViewChild, ElementRef, HostListener, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonService } from '../../../services/common-service';
 import { DataTableService } from '../../../services/data-table-service';
 import { CommonModule } from '@angular/common';
@@ -7,6 +7,7 @@ import { CommonModule } from '@angular/common';
   selector: 'app-pie-graph-component',
   imports: [CommonModule],
   templateUrl: './pie-graph-component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./pie-graph-component.css', '../../../styles.css']
 })
 export class PieGraphComponent {

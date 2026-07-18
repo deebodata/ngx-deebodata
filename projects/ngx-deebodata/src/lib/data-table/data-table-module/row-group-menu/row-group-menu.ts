@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ViewChild, ElementRef, input, signal } from '@angular/core';
+import { Component, ViewChild, ElementRef, input, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonService } from '../../../services/common-service';
 import { DataTableService } from '../../../services/data-table-service';
 import { FormsModule } from '@angular/forms';
@@ -8,6 +8,7 @@ import { FormsModule } from '@angular/forms';
   selector: 'app-row-group-menu',
   imports: [CommonModule, FormsModule],
   templateUrl: './row-group-menu.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./row-group-menu.css', '../export-component/export-component.css', '../../../styles.css']
 })
 export class RowGroupMenu {

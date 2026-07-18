@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, Output, signal, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, Output, signal, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { CommonService } from '../../../services/common-service';
 import { DataTableService } from '../../../services/data-table-service';
 import { CommonModule } from '@angular/common';
@@ -7,6 +7,7 @@ import { CommonModule } from '@angular/common';
   selector: 'app-num-value-distro-component',
   imports: [CommonModule],
   templateUrl: './num-value-distro-component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./num-value-distro-component.css', '../../../styles.css']
 })
 export class NumValueDistroComponent {

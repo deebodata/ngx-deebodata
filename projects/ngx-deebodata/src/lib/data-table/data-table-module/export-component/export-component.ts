@@ -1,4 +1,4 @@
-import { Component, ElementRef, input, Input, SimpleChanges, ViewChild, } from '@angular/core';
+import { Component, ElementRef, input, Input, SimpleChanges, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { DataTableService } from '../../../services/data-table-service';
 import { ColumnHeader } from '../../../interfaces/column-header';
 import { CommonModule, DecimalPipe } from '@angular/common';
@@ -8,6 +8,7 @@ import { FormsModule } from '@angular/forms';
   selector: 'app-export-component',
   imports: [CommonModule, DecimalPipe, FormsModule],
   templateUrl: './export-component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./export-component.css', '../../../styles.css']
 })
 export class ExportComponent {

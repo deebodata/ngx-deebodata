@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, HostListener, input, Input, Output, signal, SimpleChanges, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, input, Input, Output, signal, SimpleChanges, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { ColumnHeader } from '../../../interfaces/column-header';
 import { CommonService } from '../../../services/common-service';
 import { TableDragService } from '../../../services/table-drag-service';
@@ -37,6 +37,7 @@ import { timer } from 'rxjs';
     CommonModule,
   ],
   templateUrl: './ngx-deebodata.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./ngx-deebodata.css', '../../../styles.css'],
 })
 export class NgxDeebodata {

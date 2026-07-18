@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, HostListener, Input, Output, signal, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Input, Output, signal, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 import { CommonService } from '../../../services/common-service';
 import { DataTableService } from '../../../services/data-table-service';
 import { CommonModule } from '@angular/common';
@@ -8,6 +8,7 @@ import { FormsModule } from '@angular/forms';
   selector: 'app-line-graph-component',
   imports: [ CommonModule, FormsModule ],
   templateUrl: './line-graph-component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./line-graph-component.css', '../bar-graph-component/bar-graph-component.css', '../../../styles.css']
 })
 export class LineGraphComponent {

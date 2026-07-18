@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, Output, ViewChild, EventEmitter, HostListener, input, signal, ChangeDetectorRef, effect } from '@angular/core';
+import { Component, ElementRef, Input, Output, ViewChild, EventEmitter, HostListener, input, signal, ChangeDetectorRef, effect, ChangeDetectionStrategy } from '@angular/core';
 import { CommonService } from '../../../services/common-service';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { DataTableService } from '../../../services/data-table-service';
@@ -12,6 +12,7 @@ import { timer } from 'rxjs';
   selector: 'app-row-group-panel',
   imports: [CommonModule, DecimalPipe, DataCellComponent],
   templateUrl: './row-group-panel.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./row-group-panel.css', '../../../styles.css']
 })
 export class RowGroupPanel {
