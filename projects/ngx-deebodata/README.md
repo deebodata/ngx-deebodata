@@ -1,6 +1,6 @@
 # NgxDeebodata
 
-Angular data grid with virtual scroll, integrated charts, row grouping, column resizing, column hiding, cell editing, tab accessibility, sorting with priority, and advanced filtering. This package uses only basic @angular packages and rxjs as peer dependencies.   
+Angular v22 data grid with virtual scroll, integrated charts, row grouping, column resizing, column hiding, cell editing, tab accessibility, sorting with priority, and advanced filtering. This package uses only basic @angular packages and rxjs as peer dependencies.   
 
 # Demos  
 
@@ -79,6 +79,12 @@ export class App {
 | `myColumnStyles` | `ColumnStyles[]`   | `[]`   | pass css styles to specific values in a column   |
 | `myColumnValueColors` | `ColumnValueColors[]`   | `[]`   | assign a color to a value in pie, line, and bar graphs   |
 | `forceGrouping` | `string[]`   | `[]`   | array of column names to force grouping - gives dropdown filter & pie graphs for the column   |    
+-  
+
+**Component Output API**
+| Output | Type  | Description
+|----------|----------|----------|
+| `cellEdit` | `CellEdit`  | An object that emits with all necessary cell edit details. See more details further down   |
 -  
 
 

@@ -5,6 +5,8 @@ import { Subject } from 'rxjs';
 import { ColumnSymbol } from '../interfaces/column-symbol';
 import { ColumnStyles } from '../interfaces/column-styles';
 import { ColumnValueColors } from '../interfaces/column-value-colors';
+import { CustomSortService } from './custom-sort-service';
+import { CustomSort } from '../interfaces/custom-sort';
 
 @Injectable({
   providedIn: 'root'
@@ -12,6 +14,7 @@ import { ColumnValueColors } from '../interfaces/column-value-colors';
 export class DataTableService {
 
             constructor(private common: CommonService,
+                        private customSortService: CustomSortService,
                         private http: HttpClient,
             ) {
               
@@ -339,18 +342,24 @@ export class DataTableService {
                 const len = sortOrder.length
                 for(var i = (len-1); i >= 0; i--){
                     const field = sortOrder[i]
-                    const dir = obj[field]["sort"] === "asc" ? 1 : -1;
-                    sortData = sortData.sort( (a: any, b: any) => { 
-                        if(!a[field] && a[field] !== 0)
-                            return 1
-                        if(!b[field] && b[field] !== 0)
-                            return -1
-                        if(a[field] > b[field])
-                            return (1*dir)
-                        if((a[field] === b[field]) || (JSON.stringify(a[field]) === JSON.stringify(b[field])))
-                            return 0
-                        return (-1*dir)
-                    })
+                    const sortDir = obj[field]["sort"];
+                    const dir = sortDir === "asc" ? 1 : -1;
+                    const custom = this.customSortService.customSort[sortDir as keyof CustomSort][field];
+                    if(custom && typeof custom === "function"){
+                        sortData = sortData.sort(custom);
+                    } else {
+                        sortData = sortData.sort( (a: any, b: any) => { 
+                            if(!a[field] && a[field] !== 0)
+                                return 1
+                            if(!b[field] && b[field] !== 0)
+                                return -1
+                            if(a[field] > b[field])
+                                return (1*dir)
+                            if((a[field] === b[field]) || (JSON.stringify(a[field]) === JSON.stringify(b[field])))
+                                return 0
+                            return (-1*dir)
+                        })
+                    }
                 }
                 return sortData
             }
