@@ -1,7 +1,7 @@
 {
   "name": "ngx-deebodata",
-  "version": "0.5.1",
-  "description": "Angular v22 data grid and charts solution that solves big data analysis with virtual scroll, row grouping, column resizing, re-ordering, column hiding, cell editing, tab accessibility, sorting with priority, and advanced filtering.",
+  "version": "0.6.5",
+  "description": "Angular data grid and charts solution with virtual scroll or pagination options, row grouping, column resizing, re-ordering, column hiding, cell editing, tab accessibility, sorting with priority, and advanced filtering.",
   "peerDependencies": {
     "@angular/common": "^22.0.7",
     "@angular/core": "^22.0.7",
@@ -20,6 +20,7 @@
     "data-grid",
     "angular",
     "data",
+    "pagination",
     "datagrid",
     "angular-grid",
     "data-table",
@@ -27,6 +28,7 @@
     "sorting",
     "angular-table",
     "virtual-scroll",
+    "server-side",
     "charts",
     "graphs",
     "bar-graph",

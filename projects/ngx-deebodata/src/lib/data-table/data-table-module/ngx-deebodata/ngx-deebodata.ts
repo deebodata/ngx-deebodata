@@ -21,6 +21,9 @@ import { finalize, Subscription } from 'rxjs';
 import { ColumnSymbol } from '../../../interfaces/column-symbol';
 import { ColumnValueColors } from '../../../interfaces/column-value-colors';
 import { timer } from 'rxjs';
+import { RealPaginator } from '../real-paginator/real-paginator';
+import { PageChange } from '../../../interfaces/page-change';
+import { DataFilter } from '../../../interfaces/data-filter';
 
 @Component({
   selector: 'ngx-deebodata',
@@ -35,6 +38,7 @@ import { timer } from 'rxjs';
     FormsModule,
     DecimalPipe,
     CommonModule,
+    RealPaginator,
   ],
   templateUrl: './ngx-deebodata.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -88,7 +92,8 @@ export class NgxDeebodata {
             this.handleDraggerMU(e)
         if(this.currGroupValues().length)
             return this.dataTableService.mouseupWhileGrouped.next(e)
-        this.handleScrlBarDrag()
+        if(!this.paginate)
+            this.handleScrlBarDrag()
     }
 
     @HostListener('window:mousedown', ['$event'])
@@ -190,6 +195,7 @@ export class NgxDeebodata {
       dataHasBeenSet = signal<boolean>(false)
       validationSub: Subscription = new Subscription;
       data = input<any[]>([])
+      handlingPageChange: boolean = false
       @Input() licenseKey: string = "";
       @Input() color1: string = ""
       @Input() color2: string = ""
@@ -205,7 +211,14 @@ export class NgxDeebodata {
       @Input() editable: boolean = true;
       @Input() rowNumbers: boolean = true
       @Input() forceGrouping: string[] = []
+      @Input() paginate: boolean = false
+      @Input() rowsPerPage: number = 25;
+      @Input() serverSideTotal: number = 0;
+      @Input() serverSideFilteredTotal: number = 0;
+      @Input() pageLoadMessage: string = "Loading..."
+      @Output("pageChange") pageChange: EventEmitter<PageChange> = new EventEmitter()
       @Output("cellEdit") cellEdit: EventEmitter<CellEdit> = new EventEmitter()
+      @Output("dataFiltered") dataFiltered: EventEmitter<DataFilter> = new EventEmitter()
       @ViewChild("dataTable", { static: true }) dataTable!: ElementRef<HTMLElement>;
       @ViewChild("dataTableBody", { static: true }) dataTableBody!: ElementRef<HTMLElement>;
       @ViewChild("aboveArea", { static: true }) aboveArea!: ElementRef<HTMLElement>;
@@ -219,8 +232,14 @@ export class NgxDeebodata {
       @ViewChild("topLevelDataFilter", { static: true }) topLevelDataFilter!: ElementRef<HTMLInputElement>;
 
       ngOnChanges(changes: SimpleChanges) {
-        if(typeof changes !== "undefined" && changes["data"] && this.validationSettled() && !this.dataHasBeenSet() && this.data() && this.data().length)
-          this.handleDataInput()
+        if(typeof changes !== "undefined"){
+            if(changes["data"] && this.validationSettled() && !this.dataHasBeenSet() && this.data() && this.data().length)
+              this.handleDataInput(this.paginatorReady)
+            if(changes["serverSideTotal"])
+                this.dataTableService.serverSideTotal = Math.ceil(this.serverSideTotal)
+            if(changes["serverSideFilteredTotal"])
+                this.dataTableService.serverSideFilteredTotal = Math.ceil(this.serverSideFilteredTotal)
+        }
       }
 
       ngOnInit() {
@@ -235,6 +254,12 @@ export class NgxDeebodata {
           }
           if(this.defGridHgt)
               this.dataTableService.dTblHeight.set(this.defGridHgt)
+        if(this.paginate && this.rowsPerPage){
+            this.dataTableService.rowsPerPage = Math.min(250, Math.ceil(this.rowsPerPage))
+            this.rowNumbers = false//no row numbers with pagination
+            if(this.serverSideTotal)
+                this.dataTableService.serverSideTotal = Math.ceil(this.serverSideTotal)
+        }
           if(this.myColumnSymbols)
               this.dataTableService.columnSymbols = [...this.myColumnSymbols]
           if(this.myColumnStyles)
@@ -246,18 +271,26 @@ export class NgxDeebodata {
           this.dataTableService.removePieCovers = this.removePieCovers
       }
 
-      handleDataInput() {
+      handleDataInput(onPageChange?: boolean) {
           let tdata = this.convertNeededCols([...this.data()])
           this.dataTableService.mainData = tdata.filter( (d: any) => true )
           this.dataTableService.currFilData = tdata.filter( (d: any) => true )
           this.dataTableService.mainDataLen = this.dataTableService.mainData.length
-          this.buildInitUiDataTable(tdata, this.color1, this.color2)//hex or rgb values work best
+          if(!onPageChange){
+              this.buildInitUiDataTable(tdata, this.color1, this.color2)//hex or rgb values work best
+          } else {
+              this.renderCurrData(false)
+          }
           if(!this.dataTableService.errorLoading)
               this.dataTableService.noDataMsg = "No data to display for this configuration.";
-          this.tblDragService.dTblHeightOutput.subscribe( h => this.setTableHeight(h, true) )
-          this.tblDragService.columnMove.subscribe( c => this.processColMove(c) )
-          this.dataTableService.currGrouping.subscribe( g => this.processGrouping(g) )
+          if(!onPageChange){
+            this.tblDragService.dTblHeightOutput.subscribe( h => this.setTableHeight(h, true) )
+            this.tblDragService.columnMove.subscribe( c => this.processColMove(c) )
+            this.dataTableService.currGrouping.subscribe( g => this.processGrouping(g) )
+          }
           this.dataHasBeenSet.set(true)
+          this.handlingPageChange = false
+          this.dataTableService.disablePageButtons.next(false);
       }
 
         getAllColsAtRuntime(excludeHidden: any) {
@@ -342,6 +375,7 @@ export class NgxDeebodata {
                         this.dataTableService.listenForScroll.set(false)
                         if(this.tblDragService.handleTblHtTO)
                             clearTimeout(this.tblDragService.handleTblHtTO)
+                        if(!this.paginate)
                         this.tblDragService.handleTblHtTO = setTimeout( () => {this.handleRowsOnHeightIncrease()}, 250) 
                     }
                 }
@@ -764,6 +798,8 @@ export class NgxDeebodata {
     rowNTO: any = null;
 
     setRowNumbers() {
+        if(this.paginate)
+            return;
         const rlen = this.rows.length
         if(this.rowNumbers && rlen){
             const hasHgt: RowNumber[] = this.rowNos.filter( r => r.height)
@@ -946,7 +982,7 @@ export class NgxDeebodata {
                       this.dtChecks.push(indx)
               }
               this.useRowWid = this.getAllColWidth(colLen) + "px"
-              const limit = Math.min(init, len)
+              const limit = this.paginate ? Math.min(this.dataTableService.rowsPerPage, len) : Math.min(init, len)
               let localRows: DataRow[] = [];
               for(n; n < limit; n++){
                 const row: DataRow = { id: "dataTableRow" + n, index: n, width: this.useRowWid, cells: [], height: this.dataTableService.defltRHgt }
@@ -957,10 +993,12 @@ export class NgxDeebodata {
                 this.dataTableService.currMapping[n] = n
               }
               this.rows = [...localRows];
-              this.setLastRowIndex()
+              if(!this.paginate)
+                this.setLastRowIndex()
               this.paginatorReady = true;
               this.handleTheme(color1, color2)
-              this.handleColAnyDDFilters(data, cols)
+              if(this.serverSideTotal === 0)
+                this.handleColAnyDDFilters(data, cols)
               if(len >= 500000)
                 this.doRowsMod = 15
               timer(0).subscribe( () => { 
@@ -971,7 +1009,7 @@ export class NgxDeebodata {
               })
               timer(250).subscribe( () => { 
                 this.dataTableService.setIdealColumnWidth.next(true)
-                if(len > init){
+                if(!this.paginate && len > init){
                     let total = 0
                     let z = this.lastElRowIndex + 1
                     for(z; z < len; z++){
@@ -1088,7 +1126,7 @@ export class NgxDeebodata {
         const rel = this.selFilContainer.nativeElement
         this.currDDFilter = this.common.elifyCol(col)
         if(this.common.goodLs()){
-        const len = this.dataTableService.dataFilSrtTracker[col]["selDDVals"].length
+        const len = this.dataTableService.dataFilSrtTracker[col]["selDDVals"]?.length
         for(i; i < len; i++)
             this.currFilOpts.push(this.dataTableService.dataFilSrtTracker[col]["selDDVals"][i])
         }
@@ -1161,6 +1199,7 @@ export class NgxDeebodata {
     tFilTO: any = null;
 
     topFilterOnKeyUp(event: any) {
+      this.dataFiltered.emit({ topLevelFilter: this.topLevelFilter, sortOrder: [...this.dataTableService.sortOrder] })
       if(event && !this.common.keyCanSearch(event))
         return;
       if(!this.dataTableService.isFiltering()){
@@ -1266,7 +1305,7 @@ export class NgxDeebodata {
             this.execHorizScroll(left)
           /*horiz scroll*/
           /*vert scroll*/
-          if(top === this.verticalRest || this.lockVScroll || !this.dataTableService.listenForScroll()){
+          if(this.paginate || top === this.verticalRest || this.lockVScroll || !this.dataTableService.listenForScroll()){
               if(!this.dataTableService.autoScrollOnEdit)
                 this.clearValidatedEdit();
               return this.setRowSelChecksPlacement()
@@ -1325,6 +1364,7 @@ export class NgxDeebodata {
             this.setRowSelChecksPlacement()
             if(this.listenToCellDraggerMouseMove)
                 this.settleCellDragger()
+            if(!this.paginate)
             timer(0).subscribe( () => { this.cleanUpPossibles(); })
         })
     }
@@ -2141,9 +2181,9 @@ export class NgxDeebodata {
                 let rule1; let rule1a; let rule2; let rule3; let rule4; let rule5; let rule6; let rule7;
                 if(co1){
                     this.dataTableService.themeColor1 = co1
-                    rule1 = ".col-header span, .col-header sup, .col-header button .material-icons, " + 
+                    rule1 = ".col-header span, .col-header sup, .col-header button .material-icons, .paginator button .material-icons, .paginator label, .btn-page," + 
                     ".row-group-panel button span, .row-group-panel button i, .data-table-footer div, .btn-fil-comp i{color: "+co1+" !important}";
-                    rule1a = ".col-header select, .col-header input:not(input[type=file]), #skipTo{box-shadow:0 0 1px 1px "+co1+";" +
+                    rule1a = ".col-header select, .col-header input:not(input[type=file]), #skipTo, .btn-page-selected{box-shadow:0 0 1px 1px "+co1+";" +
                     "-webkit-box-shadow:0 0 1px 1px "+co1+"}";
                 }
                 if(co2){
@@ -2222,6 +2262,21 @@ export class NgxDeebodata {
             }
         }
 
+    handlePageChange(event: PageChange) {
+        this.dataTableService.mainData = []
+        this.dataTableService.currFilData = []
+        this.dataTableService.mainDataLen = 0
+        this.handlingPageChange = true
+        this.rows = []
+        this.dtChecks = []
+        this.aboveHgt.set(0)
+        this.belowHgt.set(0)
+        this.clearValidatedEdit(null, true)
+        this.dataHasBeenSet.set(false)
+        this.pageChange.emit(event)
+        this.dataTableService.disablePageButtons.next(true)
+    }
+
     renderCurrData(reset: boolean, field?: any): any {//filter val
         const thead = this.dataTableHeaders.nativeElement
         const tbody = this.dataTableBody.nativeElement
@@ -2234,6 +2289,9 @@ export class NgxDeebodata {
         this.doRowsMod = 10;
         this.clearValidatedEdit(null, true)
         this.dataTableService.currMapping = {}
+        const filTrkr = this.dataTableService.getFilTrkerData();
+        if(this.paginate && this.serverSideTotal > 0 && Object.keys(filTrkr).length)//only on ss pagination
+            this.dataFiltered.emit({ topLevelFilter: this.topLevelFilter, columnConfig: filTrkr, sortOrder: [...this.dataTableService.sortOrder] })
         if(!this.currGroupValues().length)//only if not grouped
             this.horizRest.set(0)
         tbody.scrollTop = 0
@@ -2245,10 +2303,15 @@ export class NgxDeebodata {
             this.horizRest.set(0)
         }
         this.lastElRowIndex = 0
-        let n = 0
+        if(this.paginate && this.serverSideTotal > 0){
+            let ssN = ((this.dataTableService.currPage-1)*this.dataTableService.rowsPerPage)
+            if(ssN > this.dataTableService.getTotal())
+                this.dataTableService.currPage = 1//force page 1
+        }
+        let n = (this.paginate && this.serverSideTotal === 0) ? ((this.dataTableService.currPage-1)*this.dataTableService.rowsPerPage) : 0
         const defNum = this.dataTableService.defltRHgtNum
         const init = Math.ceil(this.dataTableService.dTblHeight()/defNum)+this.rowElsPad;
-        const len = this.dataTableService.currFilData.length;
+        const len = (this.paginate && this.serverSideTotal === 0) ? Math.min(n+this.dataTableService.rowsPerPage, this.dataTableService.currFilData.length) : this.dataTableService.currFilData.length;
         if(!len){//always just add 1
             this.allFilSortInfo.set(this.dataTableService.getAllFilSrtInfo())
             return setTimeout( () => { this.styleEmptyFilDataRow(tbody, tbodyX) })
@@ -2296,7 +2359,7 @@ export class NgxDeebodata {
             }
         }
         this.useRowWid = this.getAllColWidth(colLen - this.getMiniColCount()) + "px";
-        const limit = Math.min(init, len)
+        const limit = this.paginate ? len : Math.min(init, len);
         this.maxCols = this.setMaxCols()
         let horizLim = Math.min(this.maxCols, colLen)
         if(field && field !== "topLevelDataFilter"){
@@ -2328,11 +2391,17 @@ export class NgxDeebodata {
             }
         }
         this.rows = [...localRows]
-        this.setLastRowIndex()
+        if(!this.paginate)
+            this.setLastRowIndex()
         this.allFilSortInfo.set(this.dataTableService.getAllFilSrtInfo())
         this.dataTableService.mapperWorkerId += 1//a reset but needs to incr so prev don't affect mapping 
+        if(this.paginate){
+            this.dataTableService.renderEvent.next(true)
+            if(this.serverSideTotal === 0 && n > len && this.dataTableService.currFilData.length)
+                this.dataTableService.forcePageOne.next(true)
+        }
         if(len){
-            if(len > init){
+            if(!this.paginate && len > init){
                 let total = 0
                 let z = this.lastElRowIndex + 1
                 for(z; z < len; z++){

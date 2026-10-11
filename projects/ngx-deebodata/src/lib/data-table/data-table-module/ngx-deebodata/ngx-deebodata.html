@@ -13,9 +13,11 @@
                 <i class="material-icons error-message heavy v-mid" aria-hidden="false">close</i>&nbsp;<span class="md-text v-mid">Grouping</span>
             </button>
         }
-        <button type="button" class="no-btn btn-chart" (click)="openCharts()" [disabled]="dataTableService.showCharts() || !dataTableService.currFilData.length || handlingSelRows || !common.goodLs()">
-            <i class="material-icons v-mid" aria-hidden="false">bar_chart</i>&nbsp;<span class="v-mid">Insights</span>
-        </button>
+        @if(serverSideTotal === 0){
+            <button type="button" class="no-btn btn-chart" (click)="openCharts()" [disabled]="dataTableService.showCharts() || !dataTableService.currFilData.length || handlingSelRows || !common.goodLs()">
+                <i class="material-icons v-mid" aria-hidden="false">bar_chart</i>&nbsp;<span class="v-mid">Insights</span>
+            </button>
+        }
         <button type="button" [disabled]="!dataTableService.currSelRows.length || handlingSelRows" (click)="clearSelectedRows()" class="btn-ctrl-sel-rows">Deselect Rows</button>
         <button #btnTogSelRows type="button" [disabled]="!dataTableService.currSelRows.length || handlingSelRows" (click)="toggleSelectedRows()" class="btn-ctrl-sel-rows">
             <i class="material-icons" aria-hidden="false">check_box_outline_blank</i>&nbsp;<span>{{togSelRows}}</span>
@@ -159,38 +161,47 @@
                 (openEvt)="scrollToRowGroup($event)"
                 ></app-row-group-panel>
             }
-            @if(!dataTableService.currFilData.length && !currGroupValues().length){
+            @if(handlingPageChange || (!dataTableService.currFilData.length && !currGroupValues().length)){
                 <div [style.height]="dataTableService.dTblHeight() + 'px'" class="data-table-row flex-center data-table-row-no-data" style="width: 100%; white-space: normal;">
-                    <div class="center">{{dataTableService.noDataMsg}}</div>
+                    <div class="center">{{handlingPageChange ? pageLoadMessage : dataTableService.noDataMsg}}</div>
                 </div>
             }
         </div>
     </div>
     @if(paginatorReady){
-        <app-data-table-paginator
-        [filSortStr]="allFilSortInfo()"
-        (jumpTo)="jumpToRow($event)"
-        [totalRows]="dataTableService.currFilData.length"
-        [disableJump]="dataTableService.showCharts() || currGroupValues().length > 0 || !dataTableService.currFilData.length || handlingSelRows"
-        ></app-data-table-paginator><!--not an actual paginator-->
+        @if(paginate){
+            <lib-real-paginator
+            [omniFilter]="topLevelFilter"
+            (pageChange)="serverSideTotal > 0 ? handlePageChange($event) : renderCurrData(false)"
+            ></lib-real-paginator>
+        } @else {
+            <app-data-table-paginator
+            [filSortStr]="allFilSortInfo()"
+            (jumpTo)="jumpToRow($event)"
+            [totalRows]="dataTableService.currFilData.length"
+            [disableJump]="dataTableService.showCharts() || currGroupValues().length > 0 || !dataTableService.currFilData.length || handlingSelRows"
+            ></app-data-table-paginator><!--not an actual paginator-->
+        }
     }
-    <div class="pad-top-thirty right">
-        <div class="inline-b deebo-dd-contain-div">
-            @if(canGroupBy().length > 0){
-                <app-row-group-menu
-                [groups]="canGroupBy()"
-                [disableGB]="dataTableService.showCharts()"
-                [enableClear]="currGroupValues().length ? true : false"
-                ></app-row-group-menu>
-            }
-        </div><div class="inline-b deebo-dd-contain-div">
-            @if(dataTableService.currFilData.length > 0){
-                <app-export-component
-                [columns]="columnHeaders"
-                [disableExport]="dataTableService.showCharts()"
-                [count]="dataTableService.currFilData.length">
-                </app-export-component>
-            }
+    @if(serverSideTotal === 0){
+        <div class="pad-top-thirty right">
+            <div class="inline-b deebo-dd-contain-div">
+                @if(!paginate && canGroupBy().length > 0){
+                    <app-row-group-menu
+                    [groups]="canGroupBy()"
+                    [disableGB]="dataTableService.showCharts()"
+                    [enableClear]="currGroupValues().length ? true : false"
+                    ></app-row-group-menu>
+                }
+            </div><div class="inline-b deebo-dd-contain-div">
+                @if(dataTableService.currFilData.length > 0){
+                    <app-export-component
+                    [columns]="columnHeaders"
+                    [disableExport]="dataTableService.showCharts()"
+                    [count]="dataTableService.currFilData.length">
+                    </app-export-component>
+                }
+            </div>
         </div>
-    </div>
+    }
 </div>

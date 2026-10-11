@@ -127,7 +127,7 @@ export class BarGraphComponent {
   buildBGBars(data: any[], max: number, sym: any) {
       let i = 0
       const len = data.length
-      let background: string = "initial"
+      let background: string = "rgb(128, 128, 128)";
       const yAx = this.yAxis.nativeElement
       const ybds = yAx.getBoundingClientRect()
       const yWid = ybds.width

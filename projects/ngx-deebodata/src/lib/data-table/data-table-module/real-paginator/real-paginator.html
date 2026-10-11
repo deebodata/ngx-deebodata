@@ -1,0 +1,33 @@
+<div id="tableFooter" class="data-table-footer" (mousemove)="tblDragService.checkPaginatorBorderCursor($event)" 
+(mousemove)="tblDragService.handleTableHeightAdjust($event)" (mousedown)="tblDragService.handleTableHeightAdjust($event)" 
+(mouseup)="tblDragService.handleColResMouseUp($event)">
+    <div class="right paginator">
+        <div class="half-wid">
+            @if(!common.goodLs()){<span class="v-mid error-message lg-text">{{"Invalid License Key"}} </span>}
+            <!-- <label for="paginator">Rows per page</label>&nbsp;
+            <select name="paginator" id="paginator" (change)="handleRowsPerPageChange($event)">
+                <option value="25" selected>25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>&nbsp;&nbsp;&bull;&nbsp;&nbsp;--><span #paginatorTracker>Rows 1-25</span> of <span #totalRows class="heavy"></span>&nbsp;&nbsp;&bull;&nbsp;&nbsp;<span #currPage>Page 1/1</span>&nbsp;
+        </div><div class="half-wid right">
+            <button type="button" #btnPageFirst class="no-btn btn-page-first" (click)="handlePaginatorChange(1)" [disabled]="dataTableService.currPage <= 1 || disableButtons()"><i class="material-icons" aria-hidden="false">first_page</i></button>&nbsp;
+            <button type="button" #btnPageBack class="no-btn btn-page-back" (click)="handlePaginatorChange(dataTableService.currPage-1)" [disabled]="dataTableService.currPage <= 1 || disableButtons()"><i class="material-icons" aria-hidden="false">arrow_back_ios</i></button>
+            &nbsp;@for(btn of pageBtns; track $index){<button type="button" class="no-btn btn-page" (click)="handlePaginatorChange(btn)" 
+            [ngClass]="{'btn-page-selected': btn === dataTableService.currPage, 'last-btn-opt': $index === (pageBtns.length-1) }">{{btn | number}}</button>}&nbsp;
+            <button type="button" #btnPageForward class="no-btn btn-page-forward" [disabled]="dataTableService.currPage >= lastPage() || disableButtons()" (click)="handlePaginatorChange(dataTableService.currPage+1)"><i class="material-icons" aria-hidden="false">arrow_forward_ios</i></button>
+            &nbsp;<button type="button" #btnPageLast class="no-btn btn-page-last" [disabled]="dataTableService.currPage >= lastPage() || disableButtons()" (click)="handlePaginatorChange(lastPage())"><i class="material-icons" aria-hidden="false">last_page</i></button>
+            <!-- &nbsp;&nbsp;<label class="skip-lbl" for="skipTo">Skip To</label>&nbsp;&nbsp;<div class="skip-to-contain"><input type="number" min="1" 
+            name="skipTo" #skipTo placeholder="Skip to" (blur)="handleSkipToPage($even.target.value)" (input)="handleSkipToPage($even.target.value)" 
+            (keyup)="handleSkipToPageOnKeyup($even.target.value)" (focus)="showSkipToOptions()" (click)="showSkipToOptions()"/><div #skipToOptions class="skip-to-options-hide">
+                <div tabindex="0" [attr.data-value]="1" (click)="setUpHandleSkipToPage()" (keyup)="setUpHandleSkipToPageOnEnter()">1st page</div>
+                @for(dd of skipDDs; track $index){
+                    <div tabindex="0" [attr.data-value]="($index+1)" (click)="setUpHandleSkipToPage()" (keyup)="setUpHandleSkipToPageOnEnter()">
+                        {{($index+1) + " out of " + lastPage()}}
+                    </div>
+                }
+                <div tabindex="0" [attr.data-value]="lastPage()" (click)="setUpHandleSkipToPage()" (keyup)="setUpHandleSkipToPageOnEnter()">Last page</div>
+            </div></div> -->
+        </div>
+    </div>
+</div>

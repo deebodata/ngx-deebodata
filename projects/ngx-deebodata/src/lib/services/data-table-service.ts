@@ -28,6 +28,10 @@ export class DataTableService {
             tblLeft: number = 0;
             tblRight: number = 0;
             dpLim: number = 1000;
+            currPage = 1
+            rowsPerPage = 25;
+            serverSideTotal = 0;
+            serverSideFilteredTotal = 0;
             currFilData: any[] = []
             currMapping: any = {}
             mapperWorkerId: number = 1;
@@ -62,6 +66,9 @@ export class DataTableService {
             groupedBoundsChange: Subject<any> = new Subject()
             mouseupWhileGrouped: Subject<any> = new Subject()
             setIdealColumnWidth: Subject<any> = new Subject()
+            renderEvent: Subject<any> = new Subject()
+            forcePageOne: Subject<any> = new Subject()
+            disablePageButtons: Subject<boolean> = new Subject()
             currSelRows: any[] = []//just be an index of mainData
             displayOnlySelRows = false
             noDataMsg: string = "Loading..."
@@ -119,6 +126,24 @@ export class DataTableService {
                         colWidth: null,
                         colCellSymbol: symbol,
                 }
+            }
+
+            getFilTrkerData() {
+                let obj: any = {};
+                for(const prop in this.dataFilSrtTracker){
+                    const trk = this.dataFilSrtTracker[prop]
+                    if(trk.filter || trk.sort)
+                    obj[prop] = { filter: trk.filter, sort: trk.sort };
+                }
+                return obj;
+            }
+
+            getTotal() {
+                if(this.serverSideFilteredTotal)
+                    return this.serverSideFilteredTotal
+                if(this.currFilData.length !== this.mainData.length)
+                    return this.serverSideFilteredTotal || this.currFilData.length || this.serverSideTotal;
+                return this.serverSideTotal || this.currFilData.length;
             }
 
             setTblVertBounds() {

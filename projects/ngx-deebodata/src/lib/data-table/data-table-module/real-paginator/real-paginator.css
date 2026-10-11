@@ -1,0 +1,109 @@
+.data-table-footer{
+    padding:15px;
+    border-bottom-left-radius:7px;
+    border-bottom-right-radius:7px;
+    box-shadow:0 1px 3px 1px var(--grid-color);
+    -moz-box-shadow:0 1px 3px 1px var(--grid-color);
+    -webkit-box-shadow:0 1px 3px 1px var(--grid-color)
+}
+
+.btn-page{
+    font-size: 16px;
+    margin-right: 25px;
+    vertical-align: middle;
+}
+
+.last-btn-opt{
+    margin-right: 5px !important;
+}
+
+.btn-page-selected{
+    font-weight: bold;
+    box-shadow:0 0 1px 1px black;
+    -webkit-box-shadow:0 0 1px 1px black
+}
+
+.btn-page-back, .btn-page-forward, .btn-page-first, .btn-page-last{
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    vertical-align: middle;
+    color: var(--accent-color);
+}
+
+.btn-page-back, .btn-page-forward{
+    margin: 0 3px;
+}
+
+.btn-page-first{
+    margin: 0 3px 0 0;
+}
+
+.btn-page-last{
+    margin: 0 7px 0 3px;
+}
+
+.btn-page-back:hover, .btn-page-forward:hover, .btn-page-first:hover, .btn-page-last:hover{
+    box-shadow:0 0 3px 2px var(--grid-color);
+    -moz-box-shadow:0 0 3px 2px var(--grid-color);
+    -webkit-box-shadow:0 0 3px 2px var(--grid-color)
+}
+
+.btn-page-back{
+    position: relative;
+}
+
+.btn-page-back .material-icons{
+    top: 0;
+    left: 5px;
+    position: absolute;
+}
+
+@media screen and (min-width:860px){
+    .btn-page-back, .btn-page-forward{
+        margin: 0 7px;
+    }
+
+    .btn-page-first{
+        margin: 0 7px 0 0;
+    }
+
+    .btn-page-last{
+        margin: 0 15px 0 7px;
+    }
+}
+
+/* .skip-to-contain, .font-fam-contain{
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.skip-to-options-hide, .font-fam-options-hide, .auth-menu-options-hide, .tbl-frm-template-select-hide, .my-tbls-select-hide, .my-tbl-conf-select-hide{
+    opacity: 0;
+    max-height: 0;
+    min-width: 0;
+    max-width: 0;
+    overflow: hidden;
+}
+
+.skip-to-options, .font-fam-options{
+    right: 0;
+    z-index: 10;
+    bottom:33px;
+    border-radius: 3px;
+    position: absolute;
+    background: white;
+    vertical-align: middle;
+    opacity: 1 !important;
+    overflow: auto !important;
+    min-width: 175px !important;
+    max-width: 200px !important;
+    max-height: 200px !important;
+    min-height: 150px;
+    box-shadow:0 0 3px 2px var(--grid-color);
+    -moz-box-shadow:0 0 3px 2px var(--grid-color);
+    -webkit-box-shadow:0 0 3px 2px var(--grid-color);
+    transition: opacity 0.2s ease;
+} */

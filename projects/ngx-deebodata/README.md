@@ -1,6 +1,6 @@
 # NgxDeebodata
 
-Angular v22 data grid with virtual scroll, integrated charts, row grouping, column resizing, column hiding, cell editing, tab accessibility, sorting with priority, and advanced filtering. This package uses only basic @angular packages and rxjs as peer dependencies.   
+Angular v22 data grid with virtual scroll or pagination, integrated charts, row grouping, column resizing, column hiding, cell editing, tab accessibility, sorting with priority, and advanced filtering. This package uses only basic @angular packages and rxjs as peer dependencies.   
 
 # Demos  
 
@@ -43,6 +43,7 @@ export class App {
 ```
 <ngx-deebodata
 [editable]="true"
+[paginate]="false"
 [rowNumbers]="true"
 [data]="sampleData()"
 [color1]="'navy'"
@@ -65,6 +66,11 @@ export class App {
 | Input | Type | Default | Description
 |----------|----------|----------|----------|
 | `editable` | `boolean`  | `true`   | Allows cells to be edited   |
+| `paginate` | `boolean`  | `false`   | Paginate data. Defaults to in memory   |
+| `serverSideTotal` | `number`  | `0`   | Activate server side pagination with a value > 0   |
+| `serverSideFilteredTotal` | `number`  | `0`   | Set when paginating from server and filters are active, keep serverSideTotal > 0 when using  |
+| `pageLoadMessage` | `string`  | `Loading...`   | Message to display while you're executing ss pagination   |
+| `rowsPerPage` | `number`  | `25`   | Number of rows per page if paginated=true, max is 250   |
 | `rowNumbers` | `boolean`   | `true`   | Show row numbers on left hand side of grid   |
 | `data` | `signal<any[]>`   | `[]`   | signal Array of objects to display   |
 | `color1` | `string`   | `""`   | Theme color 1 (css, hex, rgb)   |
@@ -85,6 +91,9 @@ export class App {
 | Output | Type  | Description
 |----------|----------|----------|
 | `cellEdit` | `CellEdit`  | An object that emits with all necessary cell edit details. See more details further down   |
+| `pageChange` | `PageChange`   | An object that emits on paginator change events if serverSideTotal input bound property is > 0. Facilitates server side pagination   |
+| `dataFiltered` | `DataFilter`  | An object that emits when server-side paginating. It gives column filter data to help query your backend for a serverSideFilteredTotal for the currently applied filters  |
+
 -  
 
 
@@ -92,10 +101,15 @@ It's best to pass hex or rgb colors to **color1, color2, pieGraphColors, & altRo
 
 Always pass a **px** string value to defRowHgt like '50px'
 
+Charts, Dropdown filters, Exports, Row grouping, and Row numbers are disabled when server-side pagination is enabled or when paginate=true AND serverSideTotal > 0;
+Row grouping and Row numbers are disabled when paginate=true but no serverSideTotal is set (in memory pagination).
+
 **forceGrouping** - if a column you want grouping/dropdown filters for isn't getting that treatment automatically, try to force it with this - may or may not work 
 depending on how many distinct values the column has and other criteria 
 
 **removePieCovers** input can be a boolean or a string[] of column names where the pie graph should be uncovered
+
+**Custom Column Sort** - please visit https://deebodata.com/ngx-deebodata-documentation/ngx-deebodata#customSort to learn about a custom sort per column
 
 
 **To pass Column Symbols (Numeric columns only)**
@@ -144,12 +158,41 @@ handleCellEdit(event: CellEdit) {//executes on cell edit if editable isn't false
 }
 ```
 
+**To Implement Server-side Pagination**
+
+- In the .ts component you want to use the data grid in
+
+```
+import { PageChange, NgxDeebodata } from 'ngx-deebodata';
+```
+
+- in the exported class
+
+```
+handlePageChange(event: PageChange) {//executes on paginator change if serverSideTotal > 0
+    //implement a server side http request using the data emitted here and update the data input with your resulting response array of data. 
+    //You can update the serverSideTotal here also for instance if you're using filters and want a new total from your backend based on said filters
+    Keep the serverSideTotal > rowsPerPage even on failed or no result api responses so that this function gets invoked!!
+    /*PageChange interface -> { skip: number; take: number; columnConfig?: any; topLevelFilter: string; sortOrder: string[]; }   
+    skip will be the page number selected - 1. So selecting page 1 will emit a skip equal to 0 for your custom logic
+    take will be equal to the rowsPerPage value you can update
+    topLevelFilter is the value of the omnifilter input above the data grid
+    columnConfig contains the filter values on a per column basis and an 'asc' or 'desc' value for any sorted columns
+    sortOrder is a string[] with a list of column names in order of sort priority, if any sorts are applied*/
+    // console.log(event)
+    //charts and filters are limited to the data currently in memory when using server side pagination
+}
+```
+
 - In the template of the component
 
 ```
 <ngx-deebodata
-[data]="sampleData()"
-(cellEdit)="handleCellEdit($event)"
+[paginate]="true"
+[serverSideTotal]="1000000"
+[pageLoadMessage]="'Loading...'"
+[data]="someServerPaginatedData()"
+(pageChange)="handlePageChange($event)"
 ></ngx-deebodata>
 ```
 
