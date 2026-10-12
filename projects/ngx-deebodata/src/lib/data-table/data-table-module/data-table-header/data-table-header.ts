@@ -39,6 +39,7 @@ export class DataTableHeader {
   @Input() canFreeze: boolean = false;
   @Input() hideMinCol: boolean = false;
   @Input() columnHeader!: ColumnHeader;
+  @Input() hideFilters: boolean = false;
   @Output("sort") sort: EventEmitter<string> = new EventEmitter()
   @Output("render") render: EventEmitter<any> = new EventEmitter()
   @Output("width") width: EventEmitter<columnWidthResize> = new EventEmitter()
@@ -70,15 +71,17 @@ export class DataTableHeader {
   }
   
   ngAfterViewInit() {
-    if(this.isSelect){
-      setTimeout( () => {
-          this.filterInputEl?.nativeElement.setAttribute("readonly", "true")
-      })
-    }
-    if(this.columnHeader.dataType === "date"){
-        setTimeout( () => {
-            this.filterInputEl?.nativeElement.addEventListener("change", e => { this.filterDateOnKeyUp(e) })
-        })
+    if(!this.hideFilters){
+        if(this.isSelect){
+          setTimeout( () => {
+              this.filterInputEl?.nativeElement.setAttribute("readonly", "true")
+          })
+        }
+        if(this.columnHeader.dataType === "date"){
+            setTimeout( () => {
+                this.filterInputEl?.nativeElement.addEventListener("change", e => { this.filterDateOnKeyUp(e) })
+            })
+        }
     }
   }
 
@@ -135,8 +138,8 @@ export class DataTableHeader {
 
   resetColFilter(event: any, field: string) {
       event && event.stopPropagation()
-      const fil = this.filterInputEl.nativeElement
-      const comp = this.compSelectEl.nativeElement
+      const fil = this.filterInputEl?.nativeElement
+      const comp = this.compSelectEl?.nativeElement
       if(fil){
           fil.value = "";
           if(this.isSelect){

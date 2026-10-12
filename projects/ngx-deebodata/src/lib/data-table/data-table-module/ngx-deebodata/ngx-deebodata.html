@@ -5,27 +5,31 @@
         }
     </div>
     <div class="controls" >
-        <input type="text" #topLevelDataFilter autocomplete="off" name="topLevelDataFilter" placeholder="Filter any column..." 
-        (input)="topFilterOnKeyUp($event)" (keyup)="topFilterOnKeyUp($event)" maxlength="255" [(ngModel)]="topLevelFilter" 
-        [disabled]="dataTableService.showCharts() || !dataTableService.mainData.length || handlingSelRows" autocomplete="off" />
+        @if(!disableOmniFilter){
+            <input type="text" #topLevelDataFilter autocomplete="off" aria-label="Filter any column" name="topLevelDataFilter" placeholder="Filter any column..." 
+            (input)="topFilterOnKeyUp($event)" (keyup)="topFilterOnKeyUp($event)" maxlength="255" [(ngModel)]="topLevelFilter" 
+            [disabled]="dataTableService.showCharts() || !dataTableService.mainData.length || handlingSelRows" autocomplete="off" />
+        }
         @if(currGroupValues().length){
             <button type="button" class="no-btn btn-clear-grp" (click)="processGrouping(null)">
                 <i class="material-icons error-message heavy v-mid" aria-hidden="false">close</i>&nbsp;<span class="md-text v-mid">Grouping</span>
             </button>
         }
-        @if(serverSideTotal === 0){
+        @if(!disableCharts && serverSideTotal === 0){
             <button type="button" class="no-btn btn-chart" (click)="openCharts()" [disabled]="dataTableService.showCharts() || !dataTableService.currFilData.length || handlingSelRows || !common.goodLs()">
                 <i class="material-icons v-mid" aria-hidden="false">bar_chart</i>&nbsp;<span class="v-mid">Insights</span>
             </button>
         }
-        <button type="button" [disabled]="!dataTableService.currSelRows.length || handlingSelRows" (click)="clearSelectedRows()" class="btn-ctrl-sel-rows">Deselect Rows</button>
-        <button #btnTogSelRows type="button" [disabled]="!dataTableService.currSelRows.length || handlingSelRows" (click)="toggleSelectedRows()" class="btn-ctrl-sel-rows">
-            <i class="material-icons" aria-hidden="false">check_box_outline_blank</i>&nbsp;<span>{{togSelRows}}</span>
-        </button>
+        @if(!disableRowSelection){
+            <button type="button" [disabled]="!dataTableService.currSelRows.length || handlingSelRows" (click)="clearSelectedRows()" class="btn-ctrl-sel-rows">Deselect Rows</button>
+            <button #btnTogSelRows type="button" [disabled]="!dataTableService.currSelRows.length || handlingSelRows" (click)="toggleSelectedRows()" class="btn-ctrl-sel-rows">
+                <i class="material-icons" aria-hidden="false">check_box_outline_blank</i>&nbsp;<span>{{togSelRows}}</span>
+            </button>
+        }
         <button [disabled]="!topLevelFilter && dataTableService.arefilSrtTrkPropsDefault()" 
         class="btn-reset" (click)="resetCurrentData()" >Reset</button>
     </div>
-    @if (!isScrolling){
+    @if (!isScrolling && !disableRowSelection){
         <div class="relly" [ngClass]="{'dt-checks': rowNumbers, 'hide' : isMultiFiltering() || dataTableService.isFiltering() || 
         dataTableService.isSorting() || currGroupValues().length || currSelEditOpts.length }">
             @for (chk of dtChecks; track $index) {
@@ -74,7 +78,7 @@
         (mousedown)="focusCellDraggerFromMouseDown()" (keydown)="handleFDragTab($event)" (keydown)="handleDraggerKD($event)"
         [ngClass]="{'hide': dataTableService.currEditIndex < 0, 'focused-cell-dragger': dataTableService.currEditIndex > -1 }"></div>
     </div>
-    @if(dataTableService.showCharts() && common.goodLs()){
+    @if(!disableCharts && dataTableService.showCharts() && common.goodLs()){
         <app-charts-and-graphs 
         [height]="chartHgt"
         [state]="chartState"
@@ -100,6 +104,7 @@
                 [columnHeader]="col"
                 [colWid]="dataTableService.useColWid"
                 [hideMinCol]="col.hideMinCol"
+                [hideFilters]="hideColumnFilters"
                 [canFreeze]="i === 0 ? true : false"
                 (reset)="resetCurrentData($event)"
                 (freeze)="freezeColCells($event)"
@@ -176,6 +181,7 @@
             ></lib-real-paginator>
         } @else {
             <app-data-table-paginator
+            [hideJumper]="hideJumpTo"
             [filSortStr]="allFilSortInfo()"
             (jumpTo)="jumpToRow($event)"
             [totalRows]="dataTableService.currFilData.length"
@@ -183,10 +189,10 @@
             ></app-data-table-paginator><!--not an actual paginator-->
         }
     }
-    @if(serverSideTotal === 0){
+    @if(serverSideTotal === 0 && !disableGroupBy && !disableExport){
         <div class="pad-top-thirty right">
             <div class="inline-b deebo-dd-contain-div">
-                @if(!paginate && canGroupBy().length > 0){
+                @if(!disableGroupBy && !paginate && canGroupBy().length > 0){
                     <app-row-group-menu
                     [groups]="canGroupBy()"
                     [disableGB]="dataTableService.showCharts()"
@@ -194,7 +200,7 @@
                     ></app-row-group-menu>
                 }
             </div><div class="inline-b deebo-dd-contain-div">
-                @if(dataTableService.currFilData.length > 0){
+                @if(!disableExport && dataTableService.currFilData.length > 0){
                     <app-export-component
                     [columns]="columnHeaders"
                     [disableExport]="dataTableService.showCharts()"

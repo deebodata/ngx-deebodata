@@ -216,6 +216,13 @@ export class NgxDeebodata {
       @Input() serverSideTotal: number = 0;
       @Input() serverSideFilteredTotal: number = 0;
       @Input() pageLoadMessage: string = "Loading..."
+      @Input() disableOmniFilter: boolean = false;
+      @Input() disableCharts: boolean = false;
+      @Input() disableGroupBy: boolean = false;
+      @Input() disableExport: boolean = false;
+      @Input() disableRowSelection: boolean = false;
+      @Input() hideJumpTo: boolean = false;
+      @Input() hideColumnFilters: boolean = false;
       @Output("pageChange") pageChange: EventEmitter<PageChange> = new EventEmitter()
       @Output("cellEdit") cellEdit: EventEmitter<CellEdit> = new EventEmitter()
       @Output("dataFiltered") dataFiltered: EventEmitter<DataFilter> = new EventEmitter()
@@ -227,9 +234,9 @@ export class NgxDeebodata {
       @ViewChild("rowNumHeader", { static: true }) rowNumHeader!: ElementRef<HTMLElement>;
       @ViewChild("fCellDragger", { static: true }) fCellDragger!: ElementRef<HTMLElement>;
       @ViewChild("selFilContainer", { static: true }) selFilContainer!: ElementRef<HTMLElement>;
-      @ViewChild("btnTogSelRows", { static: true }) btnTogSelRows!: ElementRef<HTMLButtonElement>;
+      @ViewChild("btnTogSelRows", { static: false }) btnTogSelRows!: ElementRef<HTMLButtonElement>;
       @ViewChild("dataTableHeaders", { static: true }) dataTableHeaders!: ElementRef<HTMLElement>;
-      @ViewChild("topLevelDataFilter", { static: true }) topLevelDataFilter!: ElementRef<HTMLInputElement>;
+      @ViewChild("topLevelDataFilter", { static: false }) topLevelDataFilter!: ElementRef<HTMLInputElement>;
 
       ngOnChanges(changes: SimpleChanges) {
         if(typeof changes !== "undefined"){
@@ -838,7 +845,7 @@ export class NgxDeebodata {
             this.dataTableService.displayOnlySelRows = !this.dataTableService.displayOnlySelRows
             if(forceUnsel)
                 this.dataTableService.displayOnlySelRows = false
-            const icn = this.btnTogSelRows.nativeElement.firstElementChild;
+            const icn = this.btnTogSelRows?.nativeElement.firstElementChild;
             if(this.dataTableService.displayOnlySelRows){
                 this.dataTableService.currFilData = this.dataTableService.mainData.
                 filter( (d: any, ind: number) => this.dataTableService.currSelRows.indexOf(ind) > -1 )
@@ -2129,7 +2136,7 @@ export class NgxDeebodata {
             this.columnHeaders.forEach( c => {c.height = useHgt})
             if(this.rowNumbers && this.rowNumHeader)
                 this.rowNumHeader.nativeElement.style.height = useHgt;
-            setTimeout( () => { this.setRowSelChecksPlacement() })
+            timer(0).subscribe( () => { this.dataTableService.setTblVertBounds(); this.setRowSelChecksPlacement() } )
         }
 
        setSingleRowHgt(val: any, row?: any, force?: boolean) {
@@ -2509,7 +2516,8 @@ export class NgxDeebodata {
     }
 
     setHoldingCheckCls() {
-        this.dataTableService.firstCol = this.columnHeaders.filter( c => !c.minimized)[0].column
+        if(!this.disableRowSelection)
+            this.dataTableService.firstCol = this.columnHeaders.filter( c => !c.minimized)[0].column
     }
 
     setDataRowWidthsOnMinimize(width: number) {

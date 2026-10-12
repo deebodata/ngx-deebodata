@@ -38,6 +38,7 @@ export class DataTablePaginator {
     listenToWindowSkipTo = false
     showSkipTo: boolean = false;
     @Input() totalRows: number = 0;
+    @Input() hideJumper: boolean = false;
     filSortStr = input<string>("");
     @Input() disableJump: boolean = false;
     @Output("jumpTo") jumpTo: EventEmitter<number> = new EventEmitter(true)

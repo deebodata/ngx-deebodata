@@ -29,27 +29,29 @@
         </button>
     }
     <br>
-    @if(dataTableService.dataFilSrtTracker[columnHeader.column].filter || dataTableService.hasUnchkdDDVals(dataTableService.dataFilSrtTracker[columnHeader.column]) > 0){
-        <button type="button" class="btn-x-filter" (click)="resetColFilter($event, columnHeader.column)" 
-        (mousemove)="common.unbindMouseEvent($event)" (mousedown)="common.unbindMouseEvent($event)" (mouseup)="common.unbindMouseEvent($event)" >&times;</button>
-    }
-    <input #filterInput [name]="'filter' + elCol" [class.select-filter]="isSelect" [id]="'filter' + elCol"
-    (input)="filterOnKeyUp($event, columnHeader.column, $any($event).target.value)" maxlength="255" autocomplete="off" 
-    (keyup)="filterOnKeyUp($event, columnHeader.column, $any($event).target.value)" [attr.type]="columnHeader.dataType" 
-    (focus)="emitFilterFocus($any($event).target, columnHeader.column)" (click)="emitFilterClick($any($event).target, columnHeader.column)" 
-    (mousemove)="common.unbindMouseEvent($event)" (mousedown)="common.unbindMouseEvent($event)" (mouseup)="common.unbindMouseEvent($event)" />
-    <select #compSelect [id]="'selectComp' + elCol" [name]="'selectComp' + elCol" [(ngModel)]="dataTableService.dataFilSrtTracker[columnHeader.column].comparator" 
-    (change)="handleComparatorChange(columnHeader.column, $any($event).target.value)" class="select-filter-comparator" (focus)="handleCompFocus()"
-    (mousemove)="common.unbindMouseEvent($event)" (mousedown)="common.unbindMouseEvent($event)" (mouseup)="common.unbindMouseEvent($event)" >
-        <option value="">Comparison?</option>
-        @for(opt of compOpts; track opt){
-            <option [value]="opt" [attr.selected]="isSelect && opt === 'Equals'" >{{opt}}</option>
+    @if(!hideFilters){
+        @if(dataTableService.dataFilSrtTracker[columnHeader.column].filter || dataTableService.hasUnchkdDDVals(dataTableService.dataFilSrtTracker[columnHeader.column]) > 0){
+            <button type="button" class="btn-x-filter" (click)="resetColFilter($event, columnHeader.column)" 
+            (mousemove)="common.unbindMouseEvent($event)" (mousedown)="common.unbindMouseEvent($event)" (mouseup)="common.unbindMouseEvent($event)" >&times;</button>
         }
-    </select>
-    <div class="inline relly" style="z-index: 1;">
-        <button class="btn-fil-comp" type="button"
+        <input #filterInput [name]="'filter' + elCol" [class.select-filter]="isSelect" [id]="'filter' + elCol" [aria-label]="columnHeader.column + ' column filter'"
+        (input)="filterOnKeyUp($event, columnHeader.column, $any($event).target.value)" maxlength="255" autocomplete="off" 
+        (keyup)="filterOnKeyUp($event, columnHeader.column, $any($event).target.value)" [attr.type]="columnHeader.dataType" 
+        (focus)="emitFilterFocus($any($event).target, columnHeader.column)" (click)="emitFilterClick($any($event).target, columnHeader.column)" 
+        (mousemove)="common.unbindMouseEvent($event)" (mousedown)="common.unbindMouseEvent($event)" (mouseup)="common.unbindMouseEvent($event)" />
+        <select #compSelect [id]="'selectComp' + elCol" [name]="'selectComp' + elCol" [(ngModel)]="dataTableService.dataFilSrtTracker[columnHeader.column].comparator" 
+        (change)="handleComparatorChange(columnHeader.column, $any($event).target.value)" class="select-filter-comparator" (focus)="handleCompFocus()"
         (mousemove)="common.unbindMouseEvent($event)" (mousedown)="common.unbindMouseEvent($event)" (mouseup)="common.unbindMouseEvent($event)" >
-            <i class="material-icons" aria-hidden="false">filter_list</i>
-        </button>
-    </div>
+            <option value="">Comparison?</option>
+            @for(opt of compOpts; track opt){
+                <option [value]="opt" [attr.selected]="isSelect && opt === 'Equals'" >{{opt}}</option>
+            }
+        </select>
+        <div class="inline relly" style="z-index: 1;">
+            <button class="btn-fil-comp" type="button"
+            (mousemove)="common.unbindMouseEvent($event)" (mousedown)="common.unbindMouseEvent($event)" (mouseup)="common.unbindMouseEvent($event)" >
+                <i class="material-icons" aria-hidden="false">filter_list</i>
+            </button>
+        </div>
+    }
 </div>

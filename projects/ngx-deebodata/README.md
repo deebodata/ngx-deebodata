@@ -1,6 +1,6 @@
 # NgxDeebodata
 
-Angular v22 data grid with virtual scroll or pagination, integrated charts, row grouping, column resizing, column hiding, cell editing, tab accessibility, sorting with priority, and advanced filtering. This package uses only basic @angular packages and rxjs as peer dependencies.   
+Angular data grid with virtual scroll or pagination, integrated charts, row grouping, column resizing, column hiding, cell editing, tab accessibility, sorting with priority, and advanced filtering. This package uses only basic @angular packages and rxjs as peer dependencies.   
 
 # Demos  
 
@@ -85,6 +85,13 @@ export class App {
 | `myColumnStyles` | `ColumnStyles[]`   | `[]`   | pass css styles to specific values in a column   |
 | `myColumnValueColors` | `ColumnValueColors[]`   | `[]`   | assign a color to a value in pie, line, and bar graphs   |
 | `forceGrouping` | `string[]`   | `[]`   | array of column names to force grouping - gives dropdown filter & pie graphs for the column   |    
+| `disableOmniFilter` | `boolean`  | `false`   | True removes the top left, global filter from the DOM   |
+| `disableCharts` | `boolean`  | `false`   | True removes the Insights button, thus disabling charts   |
+| `disableGroupBy` | `boolean`  | `false`   | True removes the Group By drop down panel at the bottom right of the data grid   |
+| `disableExport` | `boolean`  | `false`   | True removes the Export drop down panel at the bottom right of the data grid   |
+| `disableRowSelection` | `boolean`  | `false`   | True removes row checkboxes, the Deselect Rows button, and the toggle Selected Rows button from the DOM   |
+| `hideJumpTo` | `boolean`  | `false`   | True removes the jump to options in the right hand footer when the data grid is not paginated  |
+| `hideColumnFilters` | `boolean`  | `false`   | True removes the column filters and options in the column headers   |  
 -  
 
 **Component Output API**
