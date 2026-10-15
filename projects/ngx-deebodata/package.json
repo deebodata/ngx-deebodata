@@ -1,6 +1,6 @@
 {
   "name": "ngx-deebodata",
-  "version": "0.6.8",
+  "version": "0.7.1",
   "description": "Angular data grid and charts solution with virtual scroll or pagination options, row grouping, column resizing, re-ordering, column hiding, cell editing, tab accessibility, sorting with priority, and advanced filtering.",
   "peerDependencies": {
     "@angular/common": "^22.0.7",
@@ -14,6 +14,7 @@
   },
   "sideEffects": false,
   "license": "SEE LICENSE IN LICENSE",
+  "repository": { "url": "https://github.com/deebodata/ngx-deebodata" },
   "homepage": "https://deebodata.com/ngx-deebodata-documentation/ngx-deebodata",
   "keywords": [
     "grid",

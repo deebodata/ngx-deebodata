@@ -480,6 +480,7 @@ export class NgxDeebodata {
                     this.belowHgt.set((this.belowHgt() + bhToAdd));
             }
             setTimeout( () => { 
+                this.dataTableService.setTblVertBounds()
                 this.dataTableService.listenForScroll.set(true) 
                 this.setRowNumbers(); 
                 this.tblDragService.tblHgtDiff = 0; 

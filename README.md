@@ -11,7 +11,7 @@ Angular data grid with virtual scroll or pagination, integrated charts, row grou
 
 Install this package and use the full functionality when developing locally at http://localhost:4200
 
-To deploy to any live url, you need to obtain a **deployment license** for each developer on the project from https://deebodata.com/data-grid-checkout/angular  
+For full functionality beyond http://localhost:4200, please obtain a **deployment license** for each developer on the project from https://deebodata.com/data-grid-checkout/angular  
 
 
 ## Usage
