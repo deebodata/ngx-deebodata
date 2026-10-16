@@ -2610,7 +2610,10 @@ export class NgxDeebodata {
                     this.handleDataInput()
             } )).
             subscribe({
-                next: () => { this.common.setLs() },
+                next: (data: any) => { 
+                    this.common.setLs() 
+                    this.logExpiry(data?.response)
+                },
                 error: e => {
                     this.dataTableService.errorLoading = true
                     this.dataTableService.noDataMsg = "License validation failed. The data grid will have limited functionality.";
@@ -2618,6 +2621,15 @@ export class NgxDeebodata {
                 }
             })
         }
+    }
+
+    logExpiry(expires: any) {
+        try{
+            const oneDay = 1000*60*60*24;
+            const msg = "Your license key expires in ";
+            const diff = Math.floor((new Date(expires).getTime() - Date.now())/oneDay)
+            console.log(msg + diff + " days.")
+        } catch(e) {}
     }
 
     ngOnDestroy() {
