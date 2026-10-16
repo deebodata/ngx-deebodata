@@ -140,18 +140,19 @@ export class DataTableHeader {
       event && event.stopPropagation()
       const fil = this.filterInputEl?.nativeElement
       const comp = this.compSelectEl?.nativeElement
-      if(fil){
-          fil.value = "";
-          if(this.isSelect){
-              comp.value = "Equals"
-              this.recheckAllDDOpts(field)
-              this.dataTableService.dataFilSrtTracker[field].comparator = "Equals"
-          } else {
-              comp.value = ""
-              this.dataTableService.dataFilSrtTracker[field].comparator = null
-          }
-          this.filterOnKeyUp(event, field, "", true)
+      if(fil)
+        fil.value = "";
+      if(this.isSelect){
+          if(comp)
+            comp.value = "Equals"
+          this.recheckAllDDOpts(field)
+          this.dataTableService.dataFilSrtTracker[field].comparator = "Equals"
+      } else {
+          if(comp)
+            comp.value = ""
+          this.dataTableService.dataFilSrtTracker[field].comparator = null
       }
+      this.filterOnKeyUp(event, field, "", true)
   }
 
   recheckAllDDOpts(prop: string) {
