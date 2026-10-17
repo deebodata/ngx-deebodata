@@ -6,7 +6,7 @@ import { DataRow } from '../../../interfaces/data-row';
 import { DataCellComponent } from '../data-cell/data-cell';
 import { DataCell } from '../../../interfaces/data-cell';
 import { TableDragService } from '../../../services/table-drag-service';
-import { timer } from 'rxjs';
+import { Subscription, timer } from 'rxjs';
 
 @Component({
   selector: 'app-row-group-panel',
@@ -78,7 +78,7 @@ export class RowGroupPanel {
     this.count = this.dataTableService.currFilData.filter( d => d[this.dataTableService.currGroup] === this.groupValue).length
     this.dtr = this.common.elifyCol(this.groupValue) + "dataTableRow";
     this.dataTableService.groupedBoundsChange.subscribe( e => { this.setTblBot() })
-    this.dataTableService.gridScrollEndWhileGrouped.subscribe( e => { this.setTblBot() })
+    this.dataTableService.gridScrollEndWhileGrouped.subscribe( e => { if(!this.isScrolling) {this.setTblBot()} })
     this.dataTableService.gridEventWhileGrouped.subscribe( e => { 
       const nowOpen = this.open()
       this.rows = []
@@ -87,7 +87,7 @@ export class RowGroupPanel {
       this.rowNums = []
       this.count = this.dataTableService.currFilData.filter( d => d[this.dataTableService.currGroup] === this.groupValue).length
       if(nowOpen)
-        setTimeout( () => { this.openGroup() })
+        timer(0).subscribe( () => { this.openGroup() })
     })//just close
     // this.dataTableService.mouseupWhileGrouped.subscribe( e => {
     //     if(this.open()){
@@ -104,7 +104,7 @@ export class RowGroupPanel {
 
   openGroup() {
     this.open.set(!this.open())
-    setTimeout( () => {
+    timer(0).subscribe( () => {
         if(!this.open()){
           this.rows = []
           this.panelData = []
@@ -205,7 +205,7 @@ export class RowGroupPanel {
     const panelTop = document.getElementsByClassName("row-group-panel-" + this.elifyGrouping)[0]
     if(panelTop)
       this.tblTop = (panelTop.getBoundingClientRect().bottom || 0)// - 200
-    setTimeout( () => { this.setRowNumPlacement() })
+    timer(0).subscribe( () => { this.setRowNumPlacement() })
   }
     
   setHorizScrPos() {
@@ -359,8 +359,26 @@ export class RowGroupPanel {
         timer(0).subscribe( () => { 
             this.setColsOnVisScreen()
             this.setRowNumPlacement()
-            timer(0).subscribe( () => { this.cleanUpPossibles(); })
+            timer(0).subscribe( () => { 
+                this.cleanUpPossibles(); 
+                if(this.cleanAbvTO)
+                    this.cleanAbvTO.unsubscribe()
+                this.cleanAbvTO = timer(5).subscribe( () => {this.cleanAbove()})
+            })
         })
+    }
+
+    cleanAbvTO: Subscription|null = null;
+
+    cleanAbove() {
+        const abv = this.aboveArea.nativeElement
+        const head = document.getElementsByClassName("row-group-panel-" + this.elifyGrouping)[0]
+        const diff = (abv?.getBoundingClientRect().bottom || 0) - (head?.getBoundingClientRect().bottom || 0);
+        if(diff > 3/**top margin */ && this.transY() === 0){
+            this.aboveHgt.set(this.aboveHgt() - diff);
+            this.setRowNumPlacement()
+            this.setLastRowIndex()
+        }
     }
 
   addCell(text: any, prop: string, visible: boolean): DataCell {
@@ -635,7 +653,7 @@ export class RowGroupPanel {
             let ahToSub = 0
             let numsToAdd: number[] = []
             const doRows = force || (!this.isScrolling && (gap == 0 || !this.dataTableService.mouseIsDown)) || currTop%this.doRowsMod === 0;
-            const rowsInGap = Math.floor(gap/defNum)
+            const rowsInGap = Math.ceil(gap/defNum)
             const min = Math.max(0, (z-rowsInGap))
             for(z; z >= min; z--){
                 const wldBeElBot = rbot - (defNum*h);
@@ -676,8 +694,8 @@ export class RowGroupPanel {
     }
 
     finishApplyingDomRows(force?: boolean) {
-        this.setRowNumPlacement()
         this.fixRowContainer(0)
+        this.setRowNumPlacement()
         this.setLastRowIndex()
         if(force && !this.isScrolling){
             this.handleScrollEnd()
@@ -698,7 +716,7 @@ export class RowGroupPanel {
           if(drow)
               drow.height = useHgt
       }
-      setTimeout( () => { this.setRowNumPlacement() })
+      timer(0).subscribe( () => { this.setRowNumPlacement() })
   }
 
 

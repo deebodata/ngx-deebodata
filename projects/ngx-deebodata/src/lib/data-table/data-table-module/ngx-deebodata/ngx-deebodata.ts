@@ -368,26 +368,31 @@ export class NgxDeebodata {
 
         setTableHeight(h: number, manual?: boolean) {
             this.dataTableService.dTblHeight.set(h)
-            setTimeout( () => { 
+            if(this.tableHgtTO)
+                this.tableHgtTO.unsubscribe()
+            this.tableHgtTO = timer(0).subscribe( () => { 
                 this.dataTableService.setTblBounds()
                 this.chartHgt = this.dataTable.nativeElement.getBoundingClientRect().height + "px";
                 if(!this.dataTableService.showCharts() && !this.currGroupValues().length){
                     this.dataTableBody?.nativeElement.scrollBy(0, (this.scrollDir === "down" ? 1 : -1))
-                    setTimeout(() => { this.setRowSelChecksPlacement() }, 0)
+                    timer(0).subscribe(() => { this.setRowSelChecksPlacement() })
                 }
                 if(this.currGroupValues().length){
-                    setTimeout( () => { this.dataTableService.gridScrollEndWhileGrouped.next(true) }, 0)
+                    timer(0).subscribe( () => { this.dataTableService.gridScrollEndWhileGrouped.next(true) })
                 } else {
                     if(manual && !this.dataTableService.showCharts()){
                         this.dataTableService.listenForScroll.set(false)
-                        if(this.tblDragService.handleTblHtTO)
-                            clearTimeout(this.tblDragService.handleTblHtTO)
-                        if(!this.paginate)
-                        this.tblDragService.handleTblHtTO = setTimeout( () => {this.handleRowsOnHeightIncrease()}, 250) 
+                        if(!this.paginate){
+                            if(this.tblDragService.handleTblHtTO)
+                                this.tblDragService.handleTblHtTO.unsubscribe()
+                            this.tblDragService.handleTblHtTO = timer(250).subscribe( () => {this.handleRowsOnHeightIncrease()}) 
+                        }
                     }
                 }
-            }, 0)
+            })
         }
+
+        tableHgtTO: null|Subscription = null;
 
         handleRowsOnHeightIncrease() {
             const len = this.rows.length
@@ -479,13 +484,17 @@ export class NgxDeebodata {
                 if(bhToAdd)
                     this.belowHgt.set((this.belowHgt() + bhToAdd));
             }
-            setTimeout( () => { 
+            if(this.rowIncreaseTO)
+                this.rowIncreaseTO.unsubscribe()
+            this.rowIncreaseTO = timer(10).subscribe( () => { 
                 this.dataTableService.setTblBounds()
                 this.dataTableService.listenForScroll.set(true) 
                 this.setRowNumbers(); 
                 this.tblDragService.tblHgtDiff = 0; 
             })
         }
+
+        rowIncreaseTO: Subscription|null = null
 
         openCharts() {
             this.dataTableService.showCharts.set(true)
@@ -608,7 +617,7 @@ export class NgxDeebodata {
                 this.dataTableHeaders.nativeElement.style.height = useHgt + "px"
             if(this.rowNumHeader)
                 this.rowNumHeader.nativeElement.style.height = useHgt + "px"
-            setTimeout( () => { this.setRowSelChecksPlacement() })
+            timer(0).subscribe( () => { this.setRowSelChecksPlacement() })
         }
 
       renameColSpecChars(data: any[]) {
@@ -780,10 +789,9 @@ export class NgxDeebodata {
         }
         if(setRowOnWait){
             if(this.rowNTO){
-                clearTimeout(this.rowNTO)
-                this.rowNTO = null
+                this.rowNTO.unsubscribe()
             }
-            this.rowNTO = setTimeout(() => { this.setRowNumbers(); }, 250)
+            this.rowNTO = timer(250).subscribe(() => { this.setRowNumbers(); })
         } else {
             this.setRowNumbers()
         }
@@ -803,7 +811,7 @@ export class NgxDeebodata {
         }
     }
 
-    rowNTO: any = null;
+    rowNTO: Subscription|null = null;
 
     setRowNumbers() {
         if(this.paginate)
@@ -842,7 +850,7 @@ export class NgxDeebodata {
 
     toggleSelectedRows(forceUnsel?: any) {
         this.handlingSelRows = true
-        setTimeout( () => {//let the button disable
+        timer(0).subscribe( () => {//let the button disable
             this.dataTableService.displayOnlySelRows = !this.dataTableService.displayOnlySelRows
             if(forceUnsel)
                 this.dataTableService.displayOnlySelRows = false
@@ -869,7 +877,7 @@ export class NgxDeebodata {
                 if(col)
                     this.execFilter(col, (fil || ""))
             }
-            setTimeout( () => this.handlingSelRows = false)
+            timer(0).subscribe( () => this.handlingSelRows = false)
         })
     }
 
@@ -910,7 +918,7 @@ export class NgxDeebodata {
         this.setBtnTogRows()
         if(fullClear)
             return this.toggleSelectedRows(true)
-        setTimeout( () => this.handlingSelRows = false)
+        timer(0).subscribe( () => this.handlingSelRows = false)
     }
 
       getDataColumns(data: any[]) {
@@ -1191,7 +1199,7 @@ export class NgxDeebodata {
             }
             this.isMultiFiltering.set(true);
             this.execFilter(col, "")
-            setTimeout( () => { this.isMultiFiltering.set(false) })
+            timer(0).subscribe( () => { this.isMultiFiltering.set(false) })
             this.topLevelFilter = ""
         }
     }
@@ -1201,10 +1209,10 @@ export class NgxDeebodata {
         this.dataTableService.dataFilSrtTracker[field].filter = val || ""
         this.dataTableService.columnFilter(this.dataTableService.mainData, field, this.dataTableService.dataFilSrtTracker, this.dataTableService.sortOrder, true)
         this.renderCurrData(false, field)
-        setTimeout( () => { this.dataTableService.isFiltering.set(false) }, 500)
+        timer(500).subscribe( () => { this.dataTableService.isFiltering.set(false) })
     }
 
-    tFilTO: any = null;
+    tFilTO: Subscription|null = null;
 
     topFilterOnKeyUp(event: any) {
       this.dataFiltered.emit({ topLevelFilter: this.topLevelFilter, sortOrder: [...this.dataTableService.sortOrder] })
@@ -1219,17 +1227,17 @@ export class NgxDeebodata {
           }
           this.renderCurrData(false, "topLevelDataFilter")
           if(this.tFilTO){
-            clearTimeout(this.tFilTO)
+            this.tFilTO.unsubscribe()
             this.tFilTO = null
           }
-        this.tFilTO = setTimeout( () => { 
+        this.tFilTO = timer(500).subscribe( () => { 
               this.dataTableService.isFiltering.set(false)
               const buildUpLen = this.filterBuildUp.length
               if(buildUpLen){
                   this.topFilterOnKeyUp(null)
                   this.filterBuildUp = []
               } 
-         }, 500)
+         })
       } else {
           if(this.filterBuildUp.indexOf(this.topLevelFilter) < 0)
             this.filterBuildUp.push(this.topLevelFilter)
@@ -1372,8 +1380,14 @@ export class NgxDeebodata {
             this.setRowSelChecksPlacement()
             if(this.listenToCellDraggerMouseMove)
                 this.settleCellDragger()
-            if(!this.paginate)
-            timer(0).subscribe( () => { this.cleanUpPossibles(); })
+            if(!this.paginate){
+                timer(0).subscribe( () => { 
+                    this.cleanUpPossibles(); 
+                    if(this.cleanAbvTO)
+                        this.cleanAbvTO.unsubscribe()
+                    this.cleanAbvTO = timer(5).subscribe( () => {this.cleanAbove() })
+                })
+            }
         })
     }
 
@@ -1699,12 +1713,26 @@ export class NgxDeebodata {
     }
 
     finishApplyingDomRows(force?: boolean) {
-        this.setRowNumbers()
         this.fixRowContainer(0)
+        this.setRowNumbers()
         this.setLastRowIndex()
         this.cleanRowChecks()
         if(force && !this.isScrolling)
             this.handleScrollEnd()
+    }
+
+    cleanAbvTO: Subscription|null = null
+
+    cleanAbove() {
+        const abv = this.aboveArea.nativeElement
+        const head = this.dataTableHeaders.nativeElement
+        const diff = (abv?.getBoundingClientRect().bottom || 0) - (head?.getBoundingClientRect().bottom || 0);
+        if(diff > 0 && this.transY() === 0){
+            this.aboveHgt.set(this.aboveHgt() - diff);
+            this.setRowSelChecksPlacement()
+            this.setLastRowIndex()
+            this.cleanRowChecks()
+        }
     }
 
     jumpToRow(row: number) {
@@ -1712,7 +1740,7 @@ export class NgxDeebodata {
             const ind = row - 1
             const tbl = this.dataTableBody.nativeElement
             tbl.scrollTop = ind*this.dataTableService.defltRHgtNum;
-            setTimeout( () => { this.setRowSelChecksPlacement(true); })
+            timer(0).subscribe( () => { this.setRowSelChecksPlacement(true); })
         }
     }
 
@@ -1839,7 +1867,7 @@ export class NgxDeebodata {
                 });
                 targRow.dispatchEvent(mouseEvent)
                 targRow.removeEventListener("mousemove", execDragEOnDK)
-                setTimeout( () => {this.listenToCellDraggerMouseMove = false})
+                timer(0).subscribe( () => {this.listenToCellDraggerMouseMove = false})
             }
         }
     }
@@ -1889,7 +1917,7 @@ export class NgxDeebodata {
                 parentElement?.previousElementSibling?.firstElementChild;
                 this.dataTableService.autoScrollOnEdit = true;
                 if(nxtCell){
-                    setTimeout( () => { nxtCell.focus(); this.dataTableService.autoScrollOnEdit = false; })
+                    timer(0).subscribe( () => { nxtCell.focus(); this.dataTableService.autoScrollOnEdit = false; })
                 } else {
                     const nxtRow = this.dataTableService.shiftKeyDown === 1 ? cell.parentElement?.parentElement?.nextElementSibling :
                     cell.parentElement?.parentElement?.previousElementSibling
@@ -2137,7 +2165,9 @@ export class NgxDeebodata {
             this.columnHeaders.forEach( c => {c.height = useHgt})
             if(this.rowNumbers && this.rowNumHeader)
                 this.rowNumHeader.nativeElement.style.height = useHgt;
-            timer(0).subscribe( () => { this.dataTableService.setTblBounds(); this.setRowSelChecksPlacement() } )
+            if(this.rowIncreaseTO)
+                this.rowIncreaseTO.unsubscribe()
+            this.rowIncreaseTO = timer(10).subscribe( () => { this.dataTableService.setTblBounds(); this.setRowSelChecksPlacement() })
         }
 
        setSingleRowHgt(val: any, row?: any, force?: boolean) {
@@ -2160,7 +2190,7 @@ export class NgxDeebodata {
                     }                    
                 }
             }
-            setTimeout( () => { this.setRowSelChecksPlacement() })
+            timer(0).subscribe( () => { this.setRowSelChecksPlacement() })
             this.clearValidatedEdit()
         }
 
