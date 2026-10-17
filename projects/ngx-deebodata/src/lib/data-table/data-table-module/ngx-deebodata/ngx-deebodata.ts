@@ -480,7 +480,7 @@ export class NgxDeebodata {
                     this.belowHgt.set((this.belowHgt() + bhToAdd));
             }
             setTimeout( () => { 
-                this.dataTableService.setTblVertBounds()
+                this.dataTableService.setTblBounds()
                 this.dataTableService.listenForScroll.set(true) 
                 this.setRowNumbers(); 
                 this.tblDragService.tblHgtDiff = 0; 
@@ -2137,7 +2137,7 @@ export class NgxDeebodata {
             this.columnHeaders.forEach( c => {c.height = useHgt})
             if(this.rowNumbers && this.rowNumHeader)
                 this.rowNumHeader.nativeElement.style.height = useHgt;
-            timer(0).subscribe( () => { this.dataTableService.setTblVertBounds(); this.setRowSelChecksPlacement() } )
+            timer(0).subscribe( () => { this.dataTableService.setTblBounds(); this.setRowSelChecksPlacement() } )
         }
 
        setSingleRowHgt(val: any, row?: any, force?: boolean) {
