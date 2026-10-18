@@ -367,10 +367,11 @@ export class NgxDeebodata {
         }
 
         setTableHeight(h: number, manual?: boolean) {
-            this.dataTableService.dTblHeight.set(h)
             if(this.tableHgtTO)
                 this.tableHgtTO.unsubscribe()
             this.tableHgtTO = timer(0).subscribe( () => { 
+                this.dataTableService.listenForScroll.set(false)
+                this.dataTableService.dTblHeight.set(h)
                 this.dataTableService.setTblBounds()
                 this.chartHgt = this.dataTable.nativeElement.getBoundingClientRect().height + "px";
                 if(!this.dataTableService.showCharts() && !this.currGroupValues().length){
@@ -378,11 +379,12 @@ export class NgxDeebodata {
                     timer(0).subscribe(() => { this.setRowSelChecksPlacement() })
                 }
                 if(this.currGroupValues().length){
+                    this.dataTableService.listenForScroll.set(true)
                     timer(0).subscribe( () => { this.dataTableService.gridScrollEndWhileGrouped.next(true) })
                 } else {
                     if(manual && !this.dataTableService.showCharts()){
-                        this.dataTableService.listenForScroll.set(false)
                         if(!this.paginate){
+                            this.dataTableService.listenForScroll.set(false)
                             if(this.tblDragService.handleTblHtTO)
                                 this.tblDragService.handleTblHtTO.unsubscribe()
                             this.tblDragService.handleTblHtTO = timer(250).subscribe( () => {this.handleRowsOnHeightIncrease()}) 
@@ -1383,9 +1385,11 @@ export class NgxDeebodata {
             if(!this.paginate){
                 timer(0).subscribe( () => { 
                     this.cleanUpPossibles(); 
-                    if(this.cleanAbvTO)
-                        this.cleanAbvTO.unsubscribe()
-                    this.cleanAbvTO = timer(5).subscribe( () => {this.cleanAbove() })
+                    if(this.transY() === 0){
+                        if(this.cleanAbvTO)
+                            this.cleanAbvTO.unsubscribe()
+                        this.cleanAbvTO = timer(5).subscribe( () => {this.cleanAbove() })
+                    }
                 })
             }
         })
@@ -1727,7 +1731,7 @@ export class NgxDeebodata {
         const abv = this.aboveArea.nativeElement
         const head = this.dataTableHeaders.nativeElement
         const diff = (abv?.getBoundingClientRect().bottom || 0) - (head?.getBoundingClientRect().bottom || 0);
-        if(diff > 0 && this.transY() === 0){
+        if(diff > 0){
             this.aboveHgt.set(this.aboveHgt() - diff);
             this.setRowSelChecksPlacement()
             this.setLastRowIndex()

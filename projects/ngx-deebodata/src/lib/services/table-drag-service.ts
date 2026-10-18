@@ -253,7 +253,7 @@ export class TableDragService {
                     const tblWant = Math.min((this.dataTableService.dTblHeight() + useHgt), max);
                     const finalHgt = Math.floor(Math.max(tblWant, 100))
                     this.tblHgtDiff += (finalHgt-this.dataTableService.dTblHeight());
-                    this.dataTableService.dTblHeight.set(finalHgt);
+                    // this.dataTableService.dTblHeight.set(finalHgt);
                     this.dTblHeightOutput.next(finalHgt)
                 }catch(err){}
             }

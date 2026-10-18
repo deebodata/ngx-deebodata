@@ -361,9 +361,11 @@ export class RowGroupPanel {
             this.setRowNumPlacement()
             timer(0).subscribe( () => { 
                 this.cleanUpPossibles(); 
-                if(this.cleanAbvTO)
-                    this.cleanAbvTO.unsubscribe()
-                this.cleanAbvTO = timer(5).subscribe( () => {this.cleanAbove()})
+                if(this.transY() === 0){
+                    if(this.cleanAbvTO)
+                        this.cleanAbvTO.unsubscribe()
+                    this.cleanAbvTO = timer(5).subscribe( () => {this.cleanAbove()})
+                }
             })
         })
     }
@@ -374,7 +376,7 @@ export class RowGroupPanel {
         const abv = this.aboveArea.nativeElement
         const head = document.getElementsByClassName("row-group-panel-" + this.elifyGrouping)[0]
         const diff = (abv?.getBoundingClientRect().bottom || 0) - (head?.getBoundingClientRect().bottom || 0);
-        if(diff > 3/**top margin */ && this.transY() === 0){
+        if(diff > 3/**top margin */){
             this.aboveHgt.set(this.aboveHgt() - diff);
             this.setRowNumPlacement()
             this.setLastRowIndex()
