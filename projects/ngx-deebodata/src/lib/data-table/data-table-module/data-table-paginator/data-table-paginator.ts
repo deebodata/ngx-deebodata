@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output, SimpleChanges, HostListener, in
 import { DataTableService } from '../../../services/data-table-service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TableDragService } from '../../../services/table-drag-service';
+// import { TableDragService } from '../../../services/table-drag-service';
 import { CommonService } from '../../../services/common-service';
 
 @Component({
@@ -24,7 +24,7 @@ export class DataTablePaginator {
     }
 
     constructor(public dataTableService: DataTableService,
-                public tblDragService: TableDragService,
+                // public tblDragService: TableDragService,
                 public common: CommonService,) {
 
     }

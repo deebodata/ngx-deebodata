@@ -1,6 +1,7 @@
-<div id="tableFooter" class="data-table-footer" (mousemove)="tblDragService.checkPaginatorBorderCursor($event)" 
+<div id="tableFooter" class="data-table-footer">
+    <!-- (mousemove)="tblDragService.checkPaginatorBorderCursor($event)" 
 (mousemove)="tblDragService.handleTableHeightAdjust($event)" (mousedown)="tblDragService.handleTableHeightAdjust($event)" 
-(mouseup)="tblDragService.handleColResMouseUp($event)">
+(mouseup)="tblDragService.handleColResMouseUp($event)" -->
     <div class="three-qtr-wid">
         @if(!common.goodLs()){<span class="v-mid error-message lg-text">{{"Invalid License Key"}} </span>}
         <div class="inline v-mid semi-heavy lg-text">{{totalRowStr}}</div>&nbsp;<div class="inline v-mid">row{{totalRows === 1 ? "" : "s"}}</div>

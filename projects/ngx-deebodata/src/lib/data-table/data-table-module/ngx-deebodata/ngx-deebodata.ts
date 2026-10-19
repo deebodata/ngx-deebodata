@@ -1718,7 +1718,7 @@ export class NgxDeebodata {
 
     finishApplyingDomRows(force?: boolean) {
         this.fixRowContainer(0)
-        this.setRowNumbers()
+        this.setRowSelChecksPlacement()
         this.setLastRowIndex()
         this.cleanRowChecks()
         if(force && !this.isScrolling)
