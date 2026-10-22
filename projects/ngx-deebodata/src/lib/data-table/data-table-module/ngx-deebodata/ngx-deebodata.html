@@ -29,7 +29,7 @@
         <button [disabled]="!topLevelFilter && dataTableService.arefilSrtTrkPropsDefault()" 
         class="btn-reset" (click)="resetCurrentData()" >Reset</button>
     </div>
-    @if (!isScrolling && !disableRowSelection){
+    @if (!disableRowSelection){
         <div class="relly" [ngClass]="{'dt-checks': rowNumbers, 'hide' : isMultiFiltering() || dataTableService.isFiltering() || 
         dataTableService.isSorting() || currGroupValues().length || currSelEditOpts.length }">
             @for (chk of dtChecks; track $index) {
