@@ -1740,11 +1740,11 @@ export class NgxDeebodata {
     }
 
     jumpToRow(row: number) {
-        if(this.dataTableBody){
+        const tbl = this.dataTableBody?.nativeElement
+        if(tbl){
             const ind = row - 1
-            const tbl = this.dataTableBody.nativeElement
             tbl.scrollTop = ind*this.dataTableService.defltRHgtNum;
-            timer(0).subscribe( () => { this.setRowSelChecksPlacement(true); })
+            this.execVertScroll(tbl.scrollTop)
         }
     }
 
