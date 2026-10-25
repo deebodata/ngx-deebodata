@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, Output, SimpleChanges, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { DataCell } from '../../../interfaces/data-cell';
 import { CommonService } from '../../../services/common-service';
 import { TableDragService } from '../../../services/table-drag-service';
@@ -17,7 +17,8 @@ export class DataCellComponent {
 
   constructor(public tblDragService: TableDragService,
               public dataTableService: DataTableService,
-              private common: CommonService,) {
+              private common: CommonService,
+              private _cd: ChangeDetectorRef,) {
 
   }
 

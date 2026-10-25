@@ -102,6 +102,7 @@
             @for (col of columnHeaders; track col.column; let i = $index) {
                 <app-data-table-header
                 [columnHeader]="col"
+                [columnDefs]="defaultColumnDef"
                 [colWid]="dataTableService.useColWid"
                 [hideMinCol]="col.hideMinCol"
                 [hideFilters]="hideColumnFilters"

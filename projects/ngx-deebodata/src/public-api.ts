@@ -11,3 +11,4 @@ export * from './lib/interfaces/data-filter';
 export * from './lib/interfaces/column-value-colors';
 export * from './lib/services/custom-sort-service';
 export * from './lib/interfaces/custom-sort';
+export * from './lib/interfaces/column-def';

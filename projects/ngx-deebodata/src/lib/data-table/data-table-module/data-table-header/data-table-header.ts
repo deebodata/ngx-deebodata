@@ -5,6 +5,8 @@ import { DataTableService } from '../../../services/data-table-service';
 import { FormsModule } from '@angular/forms';
 import { TableDragService } from '../../../services/table-drag-service';
 import { CommonModule, DecimalPipe } from '@angular/common';
+import { timer } from 'rxjs';
+import { ColumnDef } from '../../../interfaces/column-def';
 
 export interface columnWidthResize{
     column: string
@@ -39,6 +41,7 @@ export class DataTableHeader {
   @Input() canFreeze: boolean = false;
   @Input() hideMinCol: boolean = false;
   @Input() columnHeader!: ColumnHeader;
+  @Input() columnDefs: ColumnDef[] = [];
   @Input() hideFilters: boolean = false;
   @Output("sort") sort: EventEmitter<string> = new EventEmitter()
   @Output("render") render: EventEmitter<any> = new EventEmitter()
@@ -52,12 +55,12 @@ export class DataTableHeader {
   @Output("emitCompFocus") emitCompFocus: EventEmitter<boolean> = new EventEmitter()
   @Output("scrollOnFocus") scrollOnFocus: EventEmitter<string> = new EventEmitter()
   @ViewChild('colHeader', { static: true }) colHeaderEl!: ElementRef<HTMLElement>
-  @ViewChild('filterInput', { static: true }) filterInputEl!: ElementRef<HTMLInputElement>
-  @ViewChild('compSelect', { static: true }) compSelectEl!: ElementRef<HTMLSelectElement>
+  @ViewChild('filterInput', { static: false }) filterInputEl!: ElementRef<HTMLInputElement>
+  @ViewChild('compSelect', { static: false }) compSelectEl!: ElementRef<HTMLSelectElement>
 
   ngOnInit() {
     this.elCol = this.common.elifyCol(this.columnHeader.column)
-    this.text = this.common.titleCase(this.columnHeader.column)
+    this.text = this.figureColumnTitle()
     this.isSelect = this.dataTableService.dataFilSrtTracker[this.columnHeader.column]?.["selDDVals"]?.length
     if(this.isSelect){
       const canComp = ["Equals", "Not Equal", "Empty", "Not Empty",]
@@ -70,19 +73,28 @@ export class DataTableHeader {
     this.dataTableService.setIdealColumnWidth.subscribe( c => { this.handleColResDblClick(this.columnHeader.column, true) })
   }
   
-  ngAfterViewInit() {
+  ngAfterContentInit() {
     if(!this.hideFilters){
         if(this.isSelect){
-          setTimeout( () => {
+          timer(50).subscribe( () => {
               this.filterInputEl?.nativeElement.setAttribute("readonly", "true")
           })
         }
         if(this.columnHeader.dataType === "date"){
-            setTimeout( () => {
+            timer(50).subscribe( () => {
                 this.filterInputEl?.nativeElement.addEventListener("change", e => { this.filterDateOnKeyUp(e) })
             })
         }
     }
+  }
+
+  figureColumnTitle(): string {
+    if(!this.columnDefs.length)
+      return this.common.titleCase(this.columnHeader.column);
+    const colDef = this.columnDefs.find( (c: ColumnDef) => c.column === this.columnHeader.column);
+    if(colDef && colDef.displayName)
+      return colDef.displayName;
+    return this.common.titleCase(this.columnHeader.column);
   }
 
   preventTabScroll() {

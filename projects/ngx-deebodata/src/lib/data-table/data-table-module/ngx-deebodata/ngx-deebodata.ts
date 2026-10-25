@@ -24,6 +24,7 @@ import { timer } from 'rxjs';
 import { RealPaginator } from '../real-paginator/real-paginator';
 import { PageChange } from '../../../interfaces/page-change';
 import { DataFilter } from '../../../interfaces/data-filter';
+import { ColumnDef } from '../../../interfaces/column-def';
 
 @Component({
   selector: 'ngx-deebodata',
@@ -203,6 +204,8 @@ export class NgxDeebodata {
       @Input() defRowHgt: string = "50px"
       @Input() defGridHgt: number = 500
       @Input() altRowColor: string = "";
+      @Input() defaultColumnDef: ColumnDef[] = [];
+      @Input() defaultLoadMessage: string = "";
       @Input() myColumnSymbols: ColumnSymbol[] = []
       @Input() myColumnStyles: ColumnStyles[] = []
       @Input() myColumnValueColors: ColumnValueColors[] = []
@@ -275,6 +278,8 @@ export class NgxDeebodata {
             this.dataTableService.columnValueColors = [...this.myColumnValueColors]
           if(this.pieGraphColors)
             this.dataTableService.pieGraphColors = [...this.pieGraphColors];
+          if(this.defaultLoadMessage)
+            this.dataTableService.noDataMsg = this.defaultLoadMessage
           this.dataTableService.removePieCovers = this.removePieCovers
       }
 
@@ -301,7 +306,7 @@ export class NgxDeebodata {
       }
 
         getAllColsAtRuntime(excludeHidden: any) {
-            let cols = (typeof this.dataTableService.mainData[0] === "object" ? Object.keys(this.dataTableService.mainData[0]) : 
+            let cols = (typeof this.dataTableService.mainData[0] === "object" ? this.getApplicableCols(this.dataTableService.mainData[0]) : 
             (Object.keys(this.dataTableService.dataFilSrtTracker)));
             if(!excludeHidden)
                 return cols;
@@ -724,7 +729,7 @@ export class NgxDeebodata {
                               if(val && typeof val === "object" && typeof val.getTime === "undefined")/**not dates */
                                   try{ nData[i][prop] = JSON.stringify(val).replace(/[\[\]{}\"]/g, "").replace(/:/g, ": ").replace(/,/g, ", ").replace(/  /g, " ")}catch(e){}
                           }
-                          const keys = Object.keys(data[i])
+                          const keys = this.getApplicableCols(data[i])
                           const diff = allCols.filter( (c) => keys.indexOf(c) < 0 )
                           const dLen = diff.length
                           if(dLen){//obj doesn't have all props
@@ -923,13 +928,36 @@ export class NgxDeebodata {
         timer(0).subscribe( () => this.handlingSelRows = false)
     }
 
+    getApplicableCols(obj: any): string[] {
+        let cols = Object.keys(obj);
+        const len = this.defaultColumnDef.length;
+        if(len){
+            let i = 0
+            let check: string[] = [];
+            for(i; i < len; i++){
+                const dcol = this.defaultColumnDef[i].column;
+                if(cols.includes(dcol) && !check.includes(dcol))//make sure it's actually there
+                    check.push(dcol)
+            }
+            if(check.length)
+                cols = [...check]
+        }
+        if(!this.loggedColumns){
+            console.log(cols)
+            this.loggedColumns = true
+        }
+        return cols;
+    }
+
+    loggedColumns = false;
+
       getDataColumns(data: any[]) {
           let i = 0
-          let cols = Object.keys(data[0])
+          let cols = this.getApplicableCols(data[0]);
           const len = data.length
           for(i; i < len; i++){
               const obj = data[i]
-              const keys = Object.keys(obj)
+              const keys = this.getApplicableCols(obj)
               const notInCols = keys.filter( (k: any) => cols.indexOf(k) < 0)
               if(typeof obj === "object" && notInCols.length){
                   let n = 0
@@ -959,7 +987,7 @@ export class NgxDeebodata {
 
       buildInitUiDataTable(data: any[], color1?: any, color2?: any) {
           try{
-              const cols = Object.keys(data[0])
+              const cols = this.getApplicableCols(data[0]);
               let i = 0; let n = 0; 
               const len = data.length;
               const colLen = cols.length
@@ -1224,7 +1252,7 @@ export class NgxDeebodata {
           this.dataTableService.isFiltering.set(true)
           this.dataTableService.easyFilter((this.topLevelFilter || ""), this.dataTableService.mainData, this.dataTableService.sortOrder)
           if(!this.topLevelFilter && !this.dataTableService.arefilSrtTrkPropsDefault()){
-              let altField = Object.keys(this.dataTableService.mainData[0])[0]
+              let altField = this.getApplicableCols(this.dataTableService.mainData[0])[0]
               this.dataTableService.columnFilter(this.dataTableService.mainData, altField, this.dataTableService.dataFilSrtTracker, this.dataTableService.sortOrder, false)
           }
           this.renderCurrData(false, "topLevelDataFilter")
