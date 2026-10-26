@@ -67,6 +67,8 @@ export class App {
 |----------|----------|----------|----------|
 | `editable` | `boolean`  | `true`   | Allows cells to be edited   |
 | `paginate` | `boolean`  | `false`   | Paginate data. Defaults to in memory   |
+| `defaultColumnDef` | `ColumnDef[]`  | `[]`   | Columns to be displayed and their order. By default, all columns are displayed in order of the first object's keys   |
+| `defaultLoadMessage` | `string`  | `Loading...`   | Message to display while data grid is loading   |
 | `serverSideTotal` | `number`  | `0`   | Activate server side pagination with a value > 0   |
 | `serverSideFilteredTotal` | `number`  | `0`   | Set when paginating from server and filters are active, keep serverSideTotal > 0 when using  |
 | `pageLoadMessage` | `string`  | `Loading...`   | Message to display while you're executing ss pagination   |
