@@ -85,6 +85,8 @@ export class DataTableService {
 
             columnSymbols: ColumnSymbol[] = []
 
+            coloredNumsColumns: string[] = []
+
             columnStyles: ColumnStyles[] = []
 
             columnValueColors: ColumnValueColors[] = []

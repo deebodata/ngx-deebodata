@@ -86,6 +86,7 @@ export class App {
 | `altRowColor` | `string`   | `""`   | alternate row color (css, hex, rgb)   |
 | `myColumnStyles` | `ColumnStyles[]`   | `[]`   | pass css styles to specific values in a column   |
 | `myColumnValueColors` | `ColumnValueColors[]`   | `[]`   | assign a color to a value in pie, line, and bar graphs   |
+| `coloredNumbersColumns` | `string[]`   | `[]`   | pass numeric columns you want colored green for positive and red for negative   |
 | `forceGrouping` | `string[]`   | `[]`   | array of column names to force grouping - gives dropdown filter & pie graphs for the column   |    
 | `disableOmniFilter` | `boolean`  | `false`   | True removes the top left, global filter from the DOM   |
 | `disableCharts` | `boolean`  | `false`   | True removes the Insights button, thus disabling charts   |

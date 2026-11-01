@@ -207,6 +207,7 @@ export class NgxDeebodata {
       @Input() defaultColumnDef: ColumnDef[] = [];
       @Input() defaultLoadMessage: string = "";
       @Input() myColumnSymbols: ColumnSymbol[] = []
+      @Input() coloredNumbersColumns: string[] = []
       @Input() myColumnStyles: ColumnStyles[] = []
       @Input() myColumnValueColors: ColumnValueColors[] = []
       @Input() pieGraphColors: string[] = []
@@ -270,8 +271,10 @@ export class NgxDeebodata {
             if(this.serverSideTotal)
                 this.dataTableService.serverSideTotal = Math.ceil(this.serverSideTotal)
         }
-          if(this.myColumnSymbols)
+          if(this.myColumnSymbols.length)
               this.dataTableService.columnSymbols = [...this.myColumnSymbols]
+          if(this.coloredNumbersColumns.length)
+            this.dataTableService.coloredNumsColumns = [...this.coloredNumbersColumns]
           if(this.myColumnStyles)
               this.dataTableService.columnStyles = [...this.myColumnStyles]
         if(this.myColumnValueColors)

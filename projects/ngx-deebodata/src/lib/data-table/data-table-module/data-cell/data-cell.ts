@@ -126,8 +126,16 @@ export class DataCellComponent {
     }
   }
 
+
   applyDimensions() {
-    this.cellStyle = { "width": (this.cell.width || this.colWid), "height": this.rowHeight }
+    const flt = parseFloat(this.cell.rawText)
+    const numTxt = !isNaN(flt);
+    if(numTxt && flt != 0 && this.dataTableService.coloredNumsColumns.indexOf(this.cell.column) > -1){
+      const color = flt > 0 ? "#009966" : "#e7000b";
+      this.cellStyle = { "width": (this.cell.width || this.colWid), "height": this.rowHeight, "color": color }
+    } else {
+      this.cellStyle = { "width": (this.cell.width || this.colWid), "height": this.rowHeight }
+    }
   }
 
   updateUiColCellTheme(cssProp: string, val: number) {
