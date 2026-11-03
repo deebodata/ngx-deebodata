@@ -1957,7 +1957,7 @@ export class NgxDeebodata {
                     const nxtRow = this.dataTableService.shiftKeyDown === 1 ? cell.parentElement?.parentElement?.nextElementSibling :
                     cell.parentElement?.parentElement?.previousElementSibling
                     if(nxtRow){
-                        this.dataTableService.scrollBodyForTabbing(this.dataTableService.shiftKeyDown)
+                        this.scrollBodyForTabbing()
                         const nxtRowCell = <HTMLElement>document.querySelector("#" + (nxtRow.id || "notHere") + " .data-cell:not(.col-header-minimized)")
                         if(nxtRowCell)
                             nxtRowCell.focus()
@@ -1969,6 +1969,15 @@ export class NgxDeebodata {
                     }
                 }
             }
+        }
+    }
+
+    scrollBodyForTabbing() {
+        const dtb = this.dataTableBody.nativeElement
+        if(dtb){
+            const scrlBy = parseInt(this.dataTableService.defltRHgt.replace(/[ ]?px/g, ""))*this.dataTableService.shiftKeyDown
+            dtb.scrollTop += scrlBy;
+            this.execVertScroll(dtb.scrollTop)
         }
     }
 

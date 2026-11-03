@@ -284,20 +284,26 @@ export class DataCellComponent {
           if(nxtCell){
             nxtCell.focus()
           } else {
-            const nxtRow = this.dataTableService.shiftKeyDown === 1 ? <HTMLElement>this.cellElem.nativeElement.parentElement?.parentElement?.nextElementSibling :
-            <HTMLElement>this.cellElem.nativeElement.parentElement?.parentElement?.previousElementSibling
-            if(nxtRow){
-                this.dataTableService.autoScrollOnEdit = true
-                this.dataTableService.scrollBodyForTabbing(this.dataTableService.shiftKeyDown)
-                const nxtRowCell = <HTMLElement>document.querySelector("#" + (nxtRow.id || "notHere") + " .data-cell:not(.col-header-minimized)")
-                if(nxtRowCell)
-                    nxtRowCell.focus()
-                else{
-                    const skip = document.getElementById("skipTo")
-                    if(skip)
-                        skip.focus()
-                }
-            }
+            // this.dataTableService.autoScrollOnEdit = true
+            // this.dataTableService.blockEditOnManualScrl = true
+            // const nxtRow = this.dataTableService.shiftKeyDown === 1 ? <HTMLElement>this.cellElem.nativeElement.parentElement?.parentElement?.nextElementSibling :
+            // <HTMLElement>this.cellElem.nativeElement.parentElement?.parentElement?.previousElementSibling
+            // if(nxtRow){
+            //     if(this.tabDownTO)
+            //       this.tabDownTO.unsubscribe()
+            //     this.tabDownTO = timer(110).subscribe( () => {
+            //       const nxtRowCell: HTMLElement|null = <HTMLElement>document.getElementById(nxtRow.id)?.firstElementChild;//<HTMLElement>document.querySelector("#" + (nxtRow.id || "notHere") + " .data-cell:not(.col-header-minimized)")
+            //       if(nxtRowCell)
+            //           nxtRowCell.focus()
+            //         timer(0).subscribe( () => {this.dataTableService.blockEditOnManualScrl = false })
+            //     })
+            //   }
+            //     else{
+            //         const skip = document.getElementById("skipTo")
+            //         if(skip)
+            //             skip.focus()
+            //         timer(0).subscribe( () => {this.dataTableService.blockEditOnManualScrl = false })
+            //     }
           }
       }
   }

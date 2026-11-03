@@ -57,6 +57,7 @@ export class DataTableService {
             autoScrollOnEdit: boolean = false
             listenToCloseExportOpts = false;
             listenToCloseGroupByOpts = false;
+            blockEditOnManualScrl = false;
             shiftKeyDown: number = 1;
             currGrouping: Subject<any> = new Subject()
             closeExportOpts: Subject<boolean> = new Subject()
@@ -185,14 +186,6 @@ export class DataTableService {
                     return false
                 }
                 return false;
-            }
-
-            scrollBodyForTabbing(multBy: number) {
-                const dtb = document.getElementById("dataTableBody")
-                if(dtb){
-                    const scrlBy = parseInt(this.defltRHgt.replace(/[ ]?px/g, ""))
-                    dtb.scrollBy(0, (multBy*scrlBy))
-                }
             }
 
             chartTopIsInView(column: string) {
