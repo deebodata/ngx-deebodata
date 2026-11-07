@@ -226,6 +226,7 @@ export class NgxDeebodata {
       @Input() disableExport: boolean = false;
       @Input() disableRowSelection: boolean = false;
       @Input() hideJumpTo: boolean = false;
+      @Input() hideFooter: boolean = false;
       @Input() hideColumnFilters: boolean = false;
       @Output("pageChange") pageChange: EventEmitter<PageChange> = new EventEmitter()
       @Output("cellEdit") cellEdit: EventEmitter<CellEdit> = new EventEmitter()
@@ -1774,8 +1775,9 @@ export class NgxDeebodata {
         const tbl = this.dataTableBody?.nativeElement
         if(tbl){
             const ind = row - 1
-            tbl.scrollTop = ind*this.dataTableService.defltRHgtNum;
-            this.execVertScroll(tbl.scrollTop)
+            // tbl.scrollTop = ind*this.dataTableService.defltRHgtNum;
+            // this.execVertScroll(tbl.scrollTop)
+            this.renderCurrData(false, null, (ind*this.dataTableService.defltRHgtNum))
         }
     }
 
@@ -2359,7 +2361,7 @@ export class NgxDeebodata {
         this.dataTableService.disablePageButtons.next(true)
     }
 
-    renderCurrData(reset: boolean, field?: any): any {//filter val
+    renderCurrData(reset: boolean, field?: any, top?: number): any {//filter val
         const thead = this.dataTableHeaders.nativeElement
         const tbody = this.dataTableBody.nativeElement
         const tbodyX = tbody.scrollLeft
@@ -2507,7 +2509,12 @@ export class NgxDeebodata {
                 }
             }
             this.dataTableService.setIdealColumnWidth.next(true)
-            timer(0).subscribe( () => { this.setRowSelChecksPlacement(); this.setHoldingCheckCls() })
+            timer(50).subscribe( () => { 
+                this.setRowSelChecksPlacement(); 
+                this.setHoldingCheckCls() 
+                if(top)
+                    tbody.scrollTop = top
+            })
         }
     }
 

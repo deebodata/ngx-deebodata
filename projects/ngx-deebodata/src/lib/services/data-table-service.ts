@@ -150,7 +150,12 @@ export class DataTableService {
             }
 
             setTblVertBounds() {
-                this.tblBot = (document.getElementById("tableFooter")?.getBoundingClientRect().top || 0)
+                const foot = document.getElementById("tableFooter")
+                if(foot){
+                    this.tblBot = foot.getBoundingClientRect().top;
+                } else {
+                    this.tblBot = (document.getElementById("dataTableBody")?.getBoundingClientRect().bottom || 0)
+                }
                 this.tblTop = (document.getElementsByClassName("data-table-headers")[0]?.getBoundingClientRect().bottom || 0)
             }
 

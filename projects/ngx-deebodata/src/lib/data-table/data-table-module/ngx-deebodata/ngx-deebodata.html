@@ -181,13 +181,15 @@
             (pageChange)="serverSideTotal > 0 ? handlePageChange($event) : renderCurrData(false)"
             ></lib-real-paginator>
         } @else {
-            <app-data-table-paginator
-            [hideJumper]="hideJumpTo"
-            [filSortStr]="allFilSortInfo()"
-            (jumpTo)="jumpToRow($event)"
-            [totalRows]="dataTableService.currFilData.length"
-            [disableJump]="dataTableService.showCharts() || currGroupValues().length > 0 || !dataTableService.currFilData.length || handlingSelRows"
-            ></app-data-table-paginator><!--not an actual paginator-->
+            @if(!hideFooter){
+                <app-data-table-paginator
+                [hideJumper]="hideJumpTo"
+                [filSortStr]="allFilSortInfo()"
+                (jumpTo)="jumpToRow($event)"
+                [totalRows]="dataTableService.currFilData.length"
+                [disableJump]="dataTableService.showCharts() || currGroupValues().length > 0 || !dataTableService.currFilData.length || handlingSelRows"
+                ></app-data-table-paginator><!--not an actual paginator-->
+            }
         }
     }
     @if(serverSideTotal === 0 && !disableGroupBy && !disableExport){

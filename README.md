@@ -88,6 +88,7 @@ export class App {
 | `myColumnValueColors` | `ColumnValueColors[]`   | `[]`   | assign a color to a value in pie, line, and bar graphs   |
 | `coloredNumbersColumns` | `string[]`   | `[]`   | pass numeric columns you want colored green for positive and red for negative   |
 | `forceGrouping` | `string[]`   | `[]`   | array of column names to force grouping - gives dropdown filter & pie graphs for the column   |    
+| `hideFooter` | `boolean`  | `false`   | True removes the footer when not using pagination   |  
 | `disableOmniFilter` | `boolean`  | `false`   | True removes the top left, global filter from the DOM   |
 | `disableCharts` | `boolean`  | `false`   | True removes the Insights button, thus disabling charts   |
 | `disableGroupBy` | `boolean`  | `false`   | True removes the Group By drop down panel at the bottom right of the data grid   |
