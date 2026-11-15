@@ -833,7 +833,10 @@ export class NgxDeebodata {
             this.rowNos = []
             let n = (this.lastElRowIndex + 1) - rlen
             for(n; n <= this.lastElRowIndex; n++){
-                let rn: any = {number: n + 1}
+                const useN = n + 1;
+                if(useN < 1)//1 is minimum
+                    continue;
+                let rn: any = {number: useN}
                 if(hasHgt.length){
                     const hh = hasHgt.find( h => h.number === n+1)
                     if(hh)

@@ -1,6 +1,6 @@
 # NgxDeebodata
 
-Angular data grid with virtual scroll or pagination, integrated charts, row grouping, column resizing, column hiding, cell editing, tab accessibility, sorting with priority, and advanced filtering. This package uses only basic @angular packages and rxjs as peer dependencies.   
+Angular data grid with virtual scroll or pagination options (server-side and in memory), integrated charts, row grouping, column resizing, column hiding, cell editing, tab accessibility, sorting with priority, and advanced filtering. This package uses only basic @angular packages and rxjs as peer dependencies.   
 
 # Demos  
 
