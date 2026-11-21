@@ -7,6 +7,7 @@ import { ColumnStyles } from '../interfaces/column-styles';
 import { ColumnValueColors } from '../interfaces/column-value-colors';
 import { CustomSortService } from './custom-sort-service';
 import { CustomSort } from '../interfaces/custom-sort';
+import { ColumnDef } from '../interfaces/column-def';
 
 @Injectable({
   providedIn: 'root'
@@ -83,6 +84,8 @@ export class DataTableService {
                 date: ["Equals", "Not on", "Empty", "Not Empty", "Before", "After"],
             }
             badStrings: string[] = ["null", "NULL", "Null", "undefined", "UNDEFINED", "Undefined"]
+
+            initColumnDef: ColumnDef[] = []
 
             columnSymbols: ColumnSymbol[] = []
 

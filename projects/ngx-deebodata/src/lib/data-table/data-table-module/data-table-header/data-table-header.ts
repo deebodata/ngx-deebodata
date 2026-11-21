@@ -70,7 +70,10 @@ export class DataTableHeader {
       this.compOpts = [...this.dataTableService.comparatorOpts[this.columnHeader.dataType]]
     }
     this.tblDragService.headDims.subscribe( d => { this.updateUiColCellTheme(d.prop, d.value) })
-    this.dataTableService.setIdealColumnWidth.subscribe( c => { this.handleColResDblClick(this.columnHeader.column, true) })
+    this.dataTableService.setIdealColumnWidth.subscribe( c => { 
+      if(!this.dataTableService.initColumnDef.some( d => d.width))
+      this.handleColResDblClick(this.columnHeader.column, true) 
+    })
   }
   
   ngAfterContentInit() {

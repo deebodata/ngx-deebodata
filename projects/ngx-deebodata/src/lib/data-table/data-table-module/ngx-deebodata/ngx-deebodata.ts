@@ -272,6 +272,8 @@ export class NgxDeebodata {
             if(this.serverSideTotal)
                 this.dataTableService.serverSideTotal = Math.ceil(this.serverSideTotal)
         }
+          if(this.defaultColumnDef.length)
+            this.dataTableService.initColumnDef = [...this.defaultColumnDef]
           if(this.myColumnSymbols.length)
               this.dataTableService.columnSymbols = [...this.myColumnSymbols]
           if(this.coloredNumbersColumns.length)
@@ -937,12 +939,12 @@ export class NgxDeebodata {
 
     getApplicableCols(obj: any): string[] {
         let cols = Object.keys(obj);
-        const len = this.defaultColumnDef.length;
+        const len = this.dataTableService.initColumnDef.length;
         if(len){
             let i = 0
             let check: string[] = [];
             for(i; i < len; i++){
-                const dcol = this.defaultColumnDef[i].column;
+                const dcol = this.dataTableService.initColumnDef[i].column;
                 if(cols.includes(dcol) && !check.includes(dcol))//make sure it's actually there
                     check.push(dcol)
             }
@@ -992,6 +994,13 @@ export class NgxDeebodata {
             return this.lastElRowIndex;
         }
 
+        setInitColWidth(prop: any) {
+            const def = this.dataTableService.initColumnDef.find( (c: ColumnDef) => c.column === prop )
+            if(def && def.width)
+                return (def.width + "px");
+            return this.dataTableService.useColWid;
+        }
+
       buildInitUiDataTable(data: any[], color1?: any, color2?: any) {
           try{
               const cols = this.getApplicableCols(data[0]);
@@ -1003,9 +1012,12 @@ export class NgxDeebodata {
               const init = Math.ceil(this.dataTableService.dTblHeight()/defNum)+this.rowElsPad;
               this.dataTableService.useColWid = Math.ceil((this.dataTableBody.nativeElement.getBoundingClientRect().width-16)/Math.min(colLen, this.maxCols)) + "px"
               for(i; i < colLen; i++){
-                  this.columnHeaders.push({ column: cols[i], width: this.dataTableService.useColWid, hideMinCol: false, freeze: false, minimized: false, dataType: this.dataTableService.figureFilterType(cols[i]) })
+                  const col = cols[i]
+                  const colWid = this.setInitColWidth(col);
+                  this.columnHeaders.push({ column: col, width: colWid, hideMinCol: false, freeze: false, minimized: false, dataType: this.dataTableService.figureFilterType(cols[i]) })
+                  this.dataTableService.dataFilSrtTracker[col].colWidth = colWid
                   if(i < this.maxCols)
-                    this.dataTableService.visibleCols.push(cols[i])
+                    this.dataTableService.visibleCols.push(col)
               }
               this.setHoldingCheckCls()
               this.columnNames = this.columnHeaders.map( c => c.column)
@@ -1021,14 +1033,13 @@ export class NgxDeebodata {
                       minimized: false,
                       rawText: text,
                       visible: initVisCols.indexOf(prop) > -1,
-                      width: this.dataTableService.useColWid,
+                      width: this.setInitColWidth(prop),
                       editable: useTxt.prop === "textContent" ? this.editable : false,
                       dataType: this.dataTableService.figureFilterType(prop),
                       text: (useTxt.prop === "textContent" ? useTxt.value : ""),
                       html: (useTxt.prop !== "textContent" ? useTxt.value : ""),
                       specialColClass: (colStyle ? (colStyle + this.common.elifyCol(useTxt.value)) : ""),
                     })
-                    this.dataTableService.dataFilSrtTracker[prop].colWidth = this.dataTableService.useColWid
                 }
 
                   if(row && prop && row.cells && row.cells.length === 1)
