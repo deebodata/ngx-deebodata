@@ -68,6 +68,7 @@ export class DataTableService {
             groupedBoundsChange: Subject<any> = new Subject()
             mouseupWhileGrouped: Subject<any> = new Subject()
             setIdealColumnWidth: Subject<any> = new Subject()
+            headerHeightAdjust: Subject<number> = new Subject()
             renderEvent: Subject<any> = new Subject()
             forcePageOne: Subject<any> = new Subject()
             disablePageButtons: Subject<boolean> = new Subject()

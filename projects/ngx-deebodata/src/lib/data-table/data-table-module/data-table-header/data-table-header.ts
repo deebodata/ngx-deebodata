@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, ViewChild, ElementRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ViewChild, ElementRef, ChangeDetectionStrategy, signal } from '@angular/core';
 import { ColumnHeader } from '../../../interfaces/column-header';
 import { CommonService } from '../../../services/common-service';
 import { DataTableService } from '../../../services/data-table-service';
@@ -37,11 +37,13 @@ export class DataTableHeader {
   canTabScroll = true
   compOpts: string[] = []
   filterBuildUp: any[] = []
+  spanHgt = signal<string>("unset")
   @Input() colWid: string = "";
   @Input() canFreeze: boolean = false;
   @Input() hideMinCol: boolean = false;
   @Input() columnHeader!: ColumnHeader;
   @Input() columnDefs: ColumnDef[] = [];
+  @Input() hideSort: boolean = false;
   @Input() hideFilters: boolean = false;
   @Output("sort") sort: EventEmitter<string> = new EventEmitter()
   @Output("render") render: EventEmitter<any> = new EventEmitter()
@@ -74,6 +76,10 @@ export class DataTableHeader {
       if(!this.dataTableService.initColumnDef.some( d => d.width))
       this.handleColResDblClick(this.columnHeader.column, true) 
     })
+    this.dataTableService.headerHeightAdjust.subscribe( (h: number) => {
+      if(this.hideFilters && this.columnHeader.height)
+        this.figureSpanHgtOnNoFilter()
+    })
   }
   
   ngAfterContentInit() {
@@ -98,6 +104,12 @@ export class DataTableHeader {
     if(colDef && colDef.displayName)
       return colDef.displayName;
     return this.common.titleCase(this.columnHeader.column);
+  }
+
+  figureSpanHgtOnNoFilter() {
+    const ch = parseInt(this.columnHeader.height?.replace(/[ ]?px/g, "") || "0");
+    if(!isNaN(ch) && ch !== 0)
+      this.spanHgt.set((ch-14) + "px")//7px vert padding on header
   }
 
   preventTabScroll() {
@@ -138,6 +150,8 @@ export class DataTableHeader {
 
   doSortOnClick(e: any, col: string) {
     e && e.stopPropagation()
+    if(this.hideSort)
+      return;
     this.canTabScroll = true
     if(!this.dataTableService.isSorting()){
         this.dataTableService.isSorting.set(true)

@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, HostListener, input, Input, Output, signal, SimpleChanges, ViewChild, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, input, Input, Output, signal, SimpleChanges, ViewChild, ChangeDetectionStrategy, } from '@angular/core';
 import { ColumnHeader } from '../../../interfaces/column-header';
 import { CommonService } from '../../../services/common-service';
 import { TableDragService } from '../../../services/table-drag-service';
@@ -539,6 +539,7 @@ export class NgxDeebodata {
                 const rwCol = this.common.replaceUniSep(this.dataTableService.currColumnEdit)
                 const trkr = this.dataTableService.dataFilSrtTracker[rwCol]
                 const addCol: ColumnHeader = { column: rwCol, width: (trkr["colWidth"] || this.dataTableService.useColWid), 
+                    sortable: this.canColumnSort(rwCol), hideFilter: this.canColumnFilter(rwCol),
                     hideMinCol: false, freeze: false, minimized: trkr["minimize"], dataType: this.dataTableService.figureFilterType(rwCol) }
                 if(inAft === -1){//they want it first
                     this.columnHeaders.unshift(addCol)
@@ -560,6 +561,7 @@ export class NgxDeebodata {
                         if(this.columnHeaders.map( c => c.column).indexOf(col) < 0){
                             const trkr = this.dataTableService.dataFilSrtTracker[col]
                             const addCol: ColumnHeader = { column: col, width: (trkr["colWidth"] || this.dataTableService.useColWid), 
+                            sortable: this.canColumnSort(rwCol), hideFilter: this.canColumnFilter(rwCol),
                             hideMinCol: false, freeze: false, minimized: trkr["minimize"], dataType: this.dataTableService.figureFilterType(col) }
                             this.columnHeaders.push(addCol)
                         }
@@ -631,6 +633,7 @@ export class NgxDeebodata {
             if(this.rowNumHeader)
                 this.rowNumHeader.nativeElement.style.height = useHgt + "px"
             timer(0).subscribe( () => { this.setRowSelChecksPlacement() })
+            this.dataTableService.headerHeightAdjust.next(useHgt)
         }
 
       renameColSpecChars(data: any[]) {
@@ -1001,6 +1004,20 @@ export class NgxDeebodata {
             return this.dataTableService.useColWid;
         }
 
+      canColumnSort(prop: string): boolean {
+        const def = this.dataTableService.initColumnDef.find( (c: ColumnDef) => c.column === prop )
+        if(def && def.sortable === false)
+            return false
+        return true;
+      }
+
+      canColumnFilter(prop: string) {
+        const def = this.dataTableService.initColumnDef.find( (c: ColumnDef) => c.column === prop )
+        if(def && def.hideFilter === true)
+            return true
+        return false;
+      }
+
       buildInitUiDataTable(data: any[], color1?: any, color2?: any) {
           try{
               const cols = this.getApplicableCols(data[0]);
@@ -1014,7 +1031,8 @@ export class NgxDeebodata {
               for(i; i < colLen; i++){
                   const col = cols[i]
                   const colWid = this.setInitColWidth(col);
-                  this.columnHeaders.push({ column: col, width: colWid, hideMinCol: false, freeze: false, minimized: false, dataType: this.dataTableService.figureFilterType(cols[i]) })
+                  this.columnHeaders.push({ column: col, width: colWid, hideMinCol: false, freeze: false, minimized: false, 
+                    dataType: this.dataTableService.figureFilterType(cols[i]), sortable: this.canColumnSort(col), hideFilter: this.canColumnFilter(col) })
                   this.dataTableService.dataFilSrtTracker[col].colWidth = colWid
                   if(i < this.maxCols)
                     this.dataTableService.visibleCols.push(col)

@@ -4,7 +4,9 @@
 (mousedown)="tblDragService.handleHeaderSizeAdjust($event)" (mouseup)="tblDragService.handleColResMouseUp($event)"
 (mousemove)="tblDragService.checkItemBorderCursor($event)" (mousemove)="tblDragService.handleHeaderSizeAdjust($event)">
     <span (mousemove)="common.unbindMouseEvent($event)" (mousedown)="common.unbindMouseEvent($event)" (mouseup)="common.unbindMouseEvent($event)"
-    (click)="doSortOnClick($event, columnHeader.column)" [class.span-disabled]="dataTableService.isSorting()">{{text}}</span>
+    (click)="doSortOnClick($event, columnHeader.column)" [class.span-disabled]="dataTableService.isSorting()"
+    [style.lineHeight]="spanHgt()">{{text}}</span>
+    @if(!hideSort){
     <button [id]="'btnSort' + elCol" type="button" [disabled]="dataTableService.isSorting()" (click)="doSortOnClick($event, columnHeader.column)" class="data-sort-arr"
     (mousemove)="common.unbindMouseEvent($event)" (mousedown)="preventTabScroll()" (mouseup)="common.unbindMouseEvent($event)"
     (focus)="emitTabFocus(elCol)">
@@ -14,6 +16,7 @@
         <sup [class.prevent]="dataTableService.isSorting()" (click)="doSortOnClick($event, columnHeader.column)" 
          (mousemove)="common.unbindMouseEvent($event)" (mousedown)="common.unbindMouseEvent($event)" (mouseup)="common.unbindMouseEvent($event)" 
          class="sort-order-indicator">{{(dataTableService.sortOrder.indexOf(columnHeader.column)+1) | number}}</sup>
+    }
     }
     @if(common.goodLs()){
         <button [id]="'btnMin' + elCol" type="button" (click)="minimizeColumn(columnHeader.column)" class="btn-min-col" [class.btn-min-col-hide]="hideMinCol"
