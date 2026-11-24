@@ -89,7 +89,7 @@ export class NumValueDistroComponent {
                     let hd =0
                     const halfPlot = 6
                     const pbds = this.numColDistContainerEl.nativeElement.getBoundingClientRect()
-                    const outParId = ("insField" + elIdCol)
+                    const outParId = (this.dataTableService.insFieldPre() + elIdCol)
                     const mrks = document.querySelectorAll("#" + outParId + " .vd-n-marker")
                     const mrlen = this.nmrksVdn.length
                     const hmrlen = this.nmrksVdnH().length
@@ -188,14 +188,15 @@ export class NumValueDistroComponent {
             if(stat){
                 const useStat = /(min|max)/g.test(stat) ? stat : "avg";
                 if(parent && useStat){
-                    const parts = parent.split("insField");
+                    const parts = parent.split(this.dataTableService.insFieldPre());
                     if(parts.length === 1)
                         elIdCol = parts[0]
                     if(parts.length === 2){
                         selOrFil = parts[0] || "";
                         elIdCol = parts[1]
                     }
-                    const matchEl = document.querySelector("#" + useStat + selOrFil + this.common.elifyCol(this.column))?.lastElementChild
+                    const elCol = this.common.elifyCol(this.column);
+                    const matchEl = document.querySelector("#" + this.dataTableService.insFieldPre() + elCol + " #" + useStat + selOrFil + elCol)?.lastElementChild
                     if(matchEl)
                         matchEl.classList.add("save-hilite")
                 }

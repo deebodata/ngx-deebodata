@@ -1,4 +1,4 @@
-<div id="tableFooter" class="data-table-footer">
+<div class="data-table-footer">
     <!-- (mousemove)="tblDragService.checkPaginatorBorderCursor($event)" 
 (mousemove)="tblDragService.handleTableHeightAdjust($event)" (mousedown)="tblDragService.handleTableHeightAdjust($event)" 
 (mouseup)="tblDragService.handleColResMouseUp($event)" -->
@@ -10,11 +10,11 @@
         }
     </div><div class="qtr-wid right">
         @if(!hideJumper){
-            <label class="skip-lbl" for="skipTo">Jump To Row</label>&nbsp;&nbsp;<div class="skip-to-contain"><input type="number" min="1" [attr.max]="totalRowStr"
-            name="skipTo" id="skipTo" #skipTo placeholder="Jump to..." (input)="handleSkipToPageOnKeyup($event, $any($event).target.value)" [(ngModel)]="skipToVal"
+            <label class="skip-lbl" [for]="dataTableService.skipToId()">Jump To Row</label>&nbsp;&nbsp;<div class="skip-to-contain"><input type="number" min="1" [attr.max]="totalRowStr"
+            [name]="dataTableService.skipToId()" [id]="dataTableService.skipToId()" #skipTo placeholder="Jump to..." (input)="handleSkipToPageOnKeyup($event, $any($event).target.value)" [(ngModel)]="skipToVal"
             (focus)="showSkipToOptions($event)" (click)="showSkipToOptions($event)" (blur)="handleSkipToPageOnKeyup($event, $any($event).target.value)" 
             (keyup.enter)="handleSkipToPageOnKeyupEnter($any($event).target.value)" (keyup)="handleSkipToPageOnKeyup($event, $any($event).target.value)" 
-            (mouseup)="common.unbindMouseEvent($event)" [disabled]="disableJump" />
+            (mouseup)="common.unbindMouseEvent($event)" [disabled]="disableJump" class="skip-to-input" />
             <div #skipToOptions class="skip-to-options-hide" [class.skip-to-options]="showSkipTo">
                 @for(row of jumpableRows; track row.value){
                     <div (click)="setUpHandleSkipToPage(row.value)"

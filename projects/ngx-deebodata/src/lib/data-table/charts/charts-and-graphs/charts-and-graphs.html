@@ -5,12 +5,12 @@
                 <i class="material-icons error-message heavy" aria-hidden="false">close</i>
             </button>
         </div>
-        <div class="insights">
+        <div #insights class="insights">
             <h2 class="no-weight center" [innerHTML]="h2Text"></h2>
             @for(row of iRows; track row; let r = $index){
                 <div class="insight-field-row">
                     @for(col of row; track col; let i = $index){
-                        <div [id]="'insField' + common.elifyCol(col.column)" class="insight-field">
+                        <div [id]="dataTableService.insFieldPre() + common.elifyCol(col.column)" class="insight-field">
                             <div style="width: 85%;">
                                 <h3 class="semi-heavy" [class.h3-bg]="col.title.indexOf( ' by ') > -1">{{col.title}}</h3>
                                 @if(rowIsAboveFold().indexOf(r) > -1){

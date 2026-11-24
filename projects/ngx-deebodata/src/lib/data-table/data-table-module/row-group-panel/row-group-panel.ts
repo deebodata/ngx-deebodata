@@ -28,8 +28,6 @@ export class RowGroupPanel {
   verticalRest = 0
   isScrolling = false;
   open = signal<boolean>(false)
-  uiGroupValue: string = ""
-  elifyGrouping: string = ""
   rows: DataRow[] = [];
   panelData: any[] = []
   tblTop: number = 0
@@ -48,6 +46,9 @@ export class RowGroupPanel {
   dtr: string = "";
   rowElsPad = 1;
   doRowsMod: number = 10;
+  @Input() uiGroupValue: string = ""
+  @Input() elifyGrouping: string = ""
+  @Input() dataTableBody!: HTMLElement;
   @Input() groupValue: string = ""
   @Input() useRowWid: string = ""
   @Input() maxCols: number = 0
@@ -57,9 +58,12 @@ export class RowGroupPanel {
   @Output("openEvt") openEvt: EventEmitter<string> = new EventEmitter()
   @Output("horizPos") horizPos: EventEmitter<number> = new EventEmitter()
   @Output("cellEdit") cellEdit: EventEmitter<any> = new EventEmitter()
-  @ViewChild("panelDataGrid") panelDataGrid!: ElementRef<HTMLElement>;
-  @ViewChild("aboveArea") aboveArea!: ElementRef<HTMLElement>;
-  @ViewChild("belowArea") belowArea!: ElementRef<HTMLElement>;
+  @ViewChild("rowGrpPanel") rowGrpPanel!: ElementRef<HTMLElement>;
+  @ViewChild("panelDataGrid", {static: false}) panelDataGrid!: ElementRef<HTMLElement>;
+  @ViewChild("aboveArea", {static: false}) aboveArea!: ElementRef<HTMLElement>;
+  @ViewChild("belowArea", {static: false}) belowArea!: ElementRef<HTMLElement>;
+  @ViewChild("rowNumContain", {static: false}) rowNumContain!: ElementRef<HTMLElement>;
+  @ViewChild("gbRowContainer", {static: false}) gbRowContainer!: ElementRef<HTMLElement>;
 
   constructor(public common: CommonService,
               private tblDragService: TableDragService,
@@ -73,10 +77,8 @@ export class RowGroupPanel {
   }
 
   ngOnInit() {
-    this.uiGroupValue = this.common.titleCase(this.groupValue)
-    this.elifyGrouping = this.common.elifyCol(this.groupValue)
     this.count = this.dataTableService.currFilData.filter( d => d[this.dataTableService.currGroup] === this.groupValue).length
-    this.dtr = this.common.elifyCol(this.groupValue) + "dataTableRow";
+    this.dtr = this.common.elifyCol(this.groupValue) + this.dataTableService.dtrPre();
     this.dataTableService.groupedBoundsChange.subscribe( e => { this.setTblBot() })
     this.dataTableService.gridScrollEndWhileGrouped.subscribe( e => { if(!this.isScrolling) {this.setTblBot()} })
     this.dataTableService.gridEventWhileGrouped.subscribe( e => { 
@@ -201,8 +203,8 @@ export class RowGroupPanel {
 
   setTblBot() {
     if(this.panelDataGrid)
-      this.tblBot = (this.panelDataGrid.nativeElement.getBoundingClientRect().bottom || 0)// + 250
-    const panelTop = document.getElementsByClassName("row-group-panel-" + this.elifyGrouping)[0]
+      this.tblBot = (this.panelDataGrid?.nativeElement.getBoundingClientRect().bottom || 0)// + 250
+    const panelTop = this.rowGrpPanel?.nativeElement
     if(panelTop)
       this.tblTop = (panelTop.getBoundingClientRect().bottom || 0)// - 200
     timer(0).subscribe( () => { this.setRowNumPlacement() })
@@ -227,7 +229,7 @@ export class RowGroupPanel {
       const len = this.columns.length
       for(i; i < len; i++){
           const col = this.columns[i]
-          const el = document.getElementById("columnHeader" + this.common.elifyCol(col))
+          const el = document.getElementById(this.dataTableService.columnHeaderPre() + this.common.elifyCol(col))
           if(el){
               const elbds = el.getBoundingClientRect()
               if(elbds.left >= this.dataTableService.tblLeft && elbds.right < this.dataTableService.tblRight)
@@ -252,10 +254,10 @@ export class RowGroupPanel {
         if(this.showRowNumbers){
             let i = 0
             const radd = 2
-            const els = document.getElementsByClassName("row-nums-" + this.elifyGrouping)
-            const len = els.length
+            const els = this.rowNumContain?.nativeElement.children;
+            const len = els?.length || 0
             const dtBody = this.panelDataGrid?.nativeElement
-            if(dtBody){
+            if(dtBody && len){
                 const tbds = dtBody.getBoundingClientRect()
                 const col1Frozen = document.getElementsByClassName("col-item-freeze").length
                 for(i; i < len; i++){
@@ -263,7 +265,7 @@ export class RowGroupPanel {
                     const row = this.rows[i]
                     if(row){
                         const tTop = tbds.top
-                        const rbds = document.querySelector("#panelDataGrid" + this.elifyGrouping + " #" + row.id)?.getBoundingClientRect()
+                        const rbds = document.querySelector("#" + this.dataTableService.pdgPre() + this.elifyGrouping + " #" + row.id)?.getBoundingClientRect()
                         if(rbds){
                             const hh = (rbds.height/2)
                             const top = Math.floor(((rbds.bottom - (hh+radd)) - tTop))
@@ -373,8 +375,8 @@ export class RowGroupPanel {
     cleanAbvTO: Subscription|null = null;
 
     cleanAbove() {
-        const abv = this.aboveArea.nativeElement
-        const head = document.getElementsByClassName("row-group-panel-" + this.elifyGrouping)[0]
+        const abv = this.aboveArea?.nativeElement
+        const head = this.rowGrpPanel?.nativeElement
         const diff = (abv?.getBoundingClientRect().bottom || 0) - (head?.getBoundingClientRect().bottom || 0);
         if(diff > 3/**top margin */){
             this.aboveHgt.set(this.aboveHgt() - diff);
@@ -430,7 +432,7 @@ export class RowGroupPanel {
         for(let p = (clen-1); p >= 0; p--){
             const col = this.columns[p]
             const elcol = this.common.elifyCol(col)
-            const head = document.getElementById("columnHeader" + elcol)
+            const head = document.getElementById(this.dataTableService.columnHeaderPre() + elcol)
             if(head){
                 const bds = head.getBoundingClientRect()
                 if(bds.left > this.dataTableService.tblRight)
@@ -486,7 +488,7 @@ export class RowGroupPanel {
                         const cell = row.cells[p]
                         if(cell){
                             const ccol = cell.column
-                            const el = document.querySelector("#panelDataGrid" + this.elifyGrouping + " #" + row.id + " .data-cell-" + this.common.elifyCol(ccol))
+                            const el = document.querySelector("#" + this.dataTableService.pdgPre() + this.elifyGrouping + " #" + row.id + " .data-cell-" + this.common.elifyCol(ccol))
                             if((el && el.getBoundingClientRect().right < this.dataTableService.tblLeft) && (!el?.innerHTML || !el.getAttribute("style"))){
                                 row.cells[p].visible = true
                                 row.cells[p] = {...this.addCell(cell.rawText, ccol, true)}
@@ -573,7 +575,7 @@ export class RowGroupPanel {
     }
 
     getLastRowBot(): number {
-        const els = document.getElementsByClassName("rows-for-" + this.elifyGrouping)
+        const els = document.querySelectorAll("#" + this.dataTableService.pdgPre() + this.elifyGrouping + " .rows-for-" + this.elifyGrouping)
         return els[els.length-1]?.getBoundingClientRect()?.bottom || this.tblBot;
     }
 
@@ -586,7 +588,7 @@ export class RowGroupPanel {
             let canAdd = 0
             const maxRows = this.rows.length
             const doRows = force || (!this.isScrolling && (gap == 0 || !this.dataTableService.mouseIsDown)) || currTop%this.doRowsMod === 0;
-            const bel = this.belowArea.nativeElement
+            const bel = this.belowArea?.nativeElement
             const bbds = bel.getBoundingClientRect()
             const btop = bbds.top - gap
             const defNum = this.dataTableService.defltRHgtNum
@@ -636,7 +638,7 @@ export class RowGroupPanel {
     }
 
     getFirstRowTop(): number {
-        return document.getElementsByClassName("rows-for-" + this.elifyGrouping)[0]?.getBoundingClientRect().top || this.tblTop;
+        return this.gbRowContainer?.nativeElement.firstElementChild?.getBoundingClientRect().top || this.tblTop//document.getElementsByClassName("rows-for-" + this.elifyGrouping)[0]?.getBoundingClientRect().top || this.tblTop;
     }
 
     execVertScrollUp(cols: string[], colLen: number, currTop: number, force?: boolean) {
@@ -645,7 +647,7 @@ export class RowGroupPanel {
         timer(0).subscribe( () => {
             let h = 0
             let rows = []
-            const ael = this.aboveArea.nativeElement
+            const ael = this.aboveArea?.nativeElement
             const abds = ael.getBoundingClientRect()
             const rbot = abds.bottom + gap;
             const maxRows = this.rows.length

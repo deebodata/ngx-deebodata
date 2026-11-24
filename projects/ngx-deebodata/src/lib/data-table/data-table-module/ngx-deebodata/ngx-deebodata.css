@@ -6,7 +6,7 @@
     --reg-font-size: 17px
 }
 
-input[name=topLevelDataFilter]{
+.top-level-filter{
     float: left;
     padding: 7px 5px;
     vertical-align: middle;

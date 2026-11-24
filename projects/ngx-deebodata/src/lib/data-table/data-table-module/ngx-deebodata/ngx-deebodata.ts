@@ -41,6 +41,9 @@ import { ColumnDef } from '../../../interfaces/column-def';
     CommonModule,
     RealPaginator,
   ],
+  providers: [DataTableService,
+TableDragService,
+CommonService,],
   templateUrl: './ngx-deebodata.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./ngx-deebodata.css', '../../../styles.css'],
@@ -83,7 +86,7 @@ export class NgxDeebodata {
             this.dataTableBody?.nativeElement.scrollBy(1, 0)
         }
         if(this.tblDragService.listenForColMvMouseUp)
-          this.tblDragService.handleColMoveMouseUp(e)
+          this.tblDragService.handleColMoveMouseUp(e, this.dataTableHeaders?.nativeElement)
         if(this.listenToCellDraggerMouseMove){
             this.listenToCellDraggerMouseMove = false
             this.clearDragEditFlag()
@@ -118,14 +121,14 @@ export class NgxDeebodata {
 
     @HostListener('window:resize', ['$event'])
     onWindowResize(e: Event) {
-        this.dataTableService.setTblBounds()
+        this.dataTableService.setTblBounds(this.dataTableHeaders?.nativeElement, this.dataTableBody?.nativeElement, this.paginatorContainer?.nativeElement, this.dataTable?.nativeElement)
         this.testHideMinBtn()
         this.clearValidatedEdit()
     }
 
     @HostListener('window:scroll', ['$event'])
     onWindowScroll(e: Event) {
-        this.dataTableService.setTblBounds()
+        this.dataTableService.setTblBounds(this.dataTableHeaders?.nativeElement, this.dataTableBody?.nativeElement, this.paginatorContainer?.nativeElement, this.dataTable?.nativeElement)
         this.clearValidatedEdit()
     }
 
@@ -142,7 +145,6 @@ export class NgxDeebodata {
     constructor(public dataTableService: DataTableService, 
                 private tblDragService: TableDragService,
                 public common: CommonService,) {
-  
       }
 
       rows: DataRow[] = [];
@@ -155,7 +157,6 @@ export class NgxDeebodata {
       horizRest = signal<number>(0)
       isScrolling = false;
       useRowWid: string = ""
-      dtr: string = "dataTableRow";
       rowElsPad = 1;
       doRowsMod: number = 10;
       currGroupValues = signal<any[]>([])
@@ -231,10 +232,15 @@ export class NgxDeebodata {
       @Output("pageChange") pageChange: EventEmitter<PageChange> = new EventEmitter()
       @Output("cellEdit") cellEdit: EventEmitter<CellEdit> = new EventEmitter()
       @Output("dataFiltered") dataFiltered: EventEmitter<DataFilter> = new EventEmitter()
+      @ViewChild("deeboSection", { static: true }) deeboSection!: ElementRef<HTMLElement>;
       @ViewChild("dataTable", { static: true }) dataTable!: ElementRef<HTMLElement>;
       @ViewChild("dataTableBody", { static: true }) dataTableBody!: ElementRef<HTMLElement>;
+      @ViewChild("dtRowContainer", { static: true }) dtRowContainer!: ElementRef<HTMLElement>;
       @ViewChild("aboveArea", { static: true }) aboveArea!: ElementRef<HTMLElement>;
       @ViewChild("belowArea", { static: true }) belowArea!: ElementRef<HTMLElement>;
+      @ViewChild("noDataRow", { static: false }) noDataRow!: ElementRef<HTMLElement>;
+      @ViewChild("rowCheckContainer", { static: false }) rowCheckContainer!: ElementRef<HTMLElement>;
+      @ViewChild("paginatorContainer", { static: false }) paginatorContainer!: ElementRef<HTMLElement>;
       @ViewChild("validatedEdit", { static: true }) validatedEdit!: ElementRef<HTMLElement>;
       @ViewChild("rowNumHeader", { static: true }) rowNumHeader!: ElementRef<HTMLElement>;
       @ViewChild("fCellDragger", { static: true }) fCellDragger!: ElementRef<HTMLElement>;
@@ -295,6 +301,29 @@ export class NgxDeebodata {
           this.dataTableService.currFilData = tdata.filter( (d: any) => true )
           this.dataTableService.mainDataLen = this.dataTableService.mainData.length
           if(!onPageChange){
+              const instances = document.getElementsByTagName("ngx-deebodata");
+              const isFirstInstance = instances[0].contains(this.deeboSection.nativeElement)
+              if(instances.length > 1 && !isFirstInstance){//only if 2nd one or greater
+                  const rand = Math.ceil(Math.random()*1000);
+                  this.dataTableService.topLevelDataFilterId.set(("topLevelDataFilter" + rand));
+                  this.dataTableService.dataTableHeadersId.set(("dataTableHeaders" + rand))
+                  this.dataTableService.checkDataTableRowId.set(("checkDataTableRow" + rand))
+                  this.dataTableService.columnHeaderPre.set(("columnHeader" + rand))
+                  this.dataTableService.dtrPre.set(("dataTableRow" + rand))
+                  this.dataTableService.groupByPre.set(("groupby" + rand))
+                  this.dataTableService.pdgPre.set(("panelDataGrid" + rand))
+                  this.dataTableService.btnSortPre.set(("btnSort" + rand))
+                  this.dataTableService.btnMinPre.set(("btnMin" + rand))
+                  this.dataTableService.skipToId.set(("skipTo" + rand))
+                  this.dataTableService.filterPre.set(("filter" + rand))
+                  this.dataTableService.selectCompPre.set(("selectComp" + rand))
+                  this.dataTableService.rnPre.set("rn" + rand)
+                  this.dataTableService.fcDrag.set("fCellDragger" + rand)
+                  this.dataTableService.valSelPre.set(("valSel" + rand))
+                  this.dataTableService.timeDiffPre.set(("timeDiff" + rand))
+                  this.dataTableService.lineGraphPre.set(("lineGraph" + rand))
+                  this.dataTableService.insFieldPre.set(("insField" + rand))
+              }
               this.buildInitUiDataTable(tdata, this.color1, this.color2)//hex or rgb values work best
           } else {
               this.renderCurrData(false)
@@ -377,13 +406,17 @@ export class NgxDeebodata {
             }
         }
 
+        scrollFromCell(event: number) {
+            this.dataTableBody?.nativeElement.scrollBy((event+1), 0)
+        }
+
         setTableHeight(h: number, manual?: boolean) {
             if(this.tableHgtTO)
                 this.tableHgtTO.unsubscribe()
             this.tableHgtTO = timer(0).subscribe( () => { 
                 this.dataTableService.listenForScroll.set(false)
                 this.dataTableService.dTblHeight.set(h)
-                this.dataTableService.setTblBounds()
+                this.dataTableService.setTblBounds(this.dataTableHeaders?.nativeElement, this.dataTableBody?.nativeElement, this.paginatorContainer?.nativeElement, this.dataTable?.nativeElement)
                 this.chartHgt = this.dataTable.nativeElement.getBoundingClientRect().height + "px";
                 if(!this.dataTableService.showCharts() && !this.currGroupValues().length){
                     this.dataTableBody?.nativeElement.scrollBy(0, (this.scrollDir === "down" ? 1 : -1))
@@ -425,8 +458,8 @@ export class NgxDeebodata {
                     const item = this.dataTableService.currFilData[o];
                     if(item){
                         const index = this.dataTableService.currMapping[o] || this.dataTableService.findObjIndxInData(item)
-                        if(!this.rows.find(r => r.id === (this.dtr + index))){
-                            const row: DataRow = { id: this.dtr + index, index: index, width: this.useRowWid, cells: [], height: this.dataTableService.defltRHgt }
+                        if(!this.rows.find(r => r.id === (this.dataTableService.dtrPre() + index))){
+                            const row: DataRow = { id: this.dataTableService.dtrPre() + index, index: index, width: this.useRowWid, cells: [], height: this.dataTableService.defltRHgt }
                             let k = 0
                             for(k; k < colLen; k++){
                                 const col = cols[k]
@@ -473,7 +506,7 @@ export class NgxDeebodata {
                 for(i; i < agoto; i++)
                     applyRow(i, true)
                 if(xtras > 0){
-                    const elsLen = document.getElementsByClassName("data-table-row").length
+                    const elsLen = this.dtRowContainer.nativeElement.children.length
                     let x = (this.lastElRowIndex-elsLen)-1;
                     let xgoto = x-xtras;
                     for(x; x >= xgoto; x--)
@@ -500,7 +533,7 @@ export class NgxDeebodata {
             if(this.rowIncreaseTO)
                 this.rowIncreaseTO.unsubscribe()
             this.rowIncreaseTO = timer(10).subscribe( () => { 
-                this.dataTableService.setTblBounds()
+                this.dataTableService.setTblBounds(this.dataTableHeaders?.nativeElement, this.dataTableBody?.nativeElement, this.paginatorContainer?.nativeElement, this.dataTable?.nativeElement)
                 this.dataTableService.listenForScroll.set(true) 
                 this.setRowNumbers(); 
                 this.tblDragService.tblHgtDiff = 0; 
@@ -557,11 +590,13 @@ export class NgxDeebodata {
                     const len = els.length
                     this.columnHeaders = []
                     for(i; i < len; i++){
-                        const col = this.common.replaceUniSep(els[i].id.replace(/^columnHeader/, ""))
+                        if(!this.dataTableHeaders?.nativeElement.contains(els[i]))
+                            continue;
+                        const col = this.common.replaceUniSep(els[i].id.replace(new RegExp(this.dataTableService.columnHeaderPre(), "g"), ""))
                         if(this.columnHeaders.map( c => c.column).indexOf(col) < 0){
                             const trkr = this.dataTableService.dataFilSrtTracker[col]
                             const addCol: ColumnHeader = { column: col, width: (trkr["colWidth"] || this.dataTableService.useColWid), 
-                            sortable: this.canColumnSort(rwCol), hideFilter: this.canColumnFilter(rwCol),
+                            sortable: this.canColumnSort(col), hideFilter: this.canColumnFilter(col),
                             hideMinCol: false, freeze: false, minimized: trkr["minimize"], dataType: this.dataTableService.figureFilterType(col) }
                             this.columnHeaders.push(addCol)
                         }
@@ -604,18 +639,20 @@ export class NgxDeebodata {
         }
 
         setColHeaderHgt() {//set hgt = to tallest
-            let z = 0; let i = 0; let x = 0
+            let z = 0; let i = 0; let x = 0;
             let hgts = []
             const cols =  document.getElementsByClassName("col-header")
             const cLen = this.columnHeaders?.length
+            const colElLen = cols.length
             for(x; x < cLen; x++){
                 const col = this.columnHeaders[x]
                 col.height = undefined
                 col.lineHeight = undefined
             }
-            for(z; z < cLen; z++){
-                if(cols[z])
-                    hgts.push(cols[z].getBoundingClientRect().height)
+            for(z; z < colElLen; z++){
+                const col = cols[z];
+                if(col && this.dataTableHeaders?.nativeElement.contains(col))
+                    hgts.push(col.getBoundingClientRect().height)
             }
             const maxHgt = hgts.sort( (a: number,b: number) => a > b ? -1 : 1 )[0]
             const useHgt = Math.ceil(maxHgt)
@@ -623,9 +660,9 @@ export class NgxDeebodata {
                 const col = this.columnHeaders[i]
                 if(col && !col.minimized){
                     col.height = useHgt + "px"
-                    const elCol = cols[i]
-                    if(elCol && elCol.firstElementChild && elCol.firstElementChild.getBoundingClientRect().height < 40)
-                        col.lineHeight = Math.floor(((useHgt/2)-21)) + "px"
+                    // const elCol = cols[i]
+                    // if(elCol && elCol.firstElementChild && this.dataTableHeaders?.nativeElement.contains(elCol) && elCol.firstElementChild.getBoundingClientRect().height < 40)
+                    col.lineHeight = Math.floor(((useHgt/2)-21)) + "px"
                 }
             }
             if(this.dataTableHeaders)
@@ -779,7 +816,7 @@ export class NgxDeebodata {
       setRowSelChecksPlacement(setRowOnWait?: boolean) {
         let i = 0
         const radd = 12
-        const els = document.getElementsByClassName("select-row-check")
+        const els = this.rowCheckContainer?.nativeElement.children
         const len = els.length
         const dtBody = this.dataTableBody.nativeElement
         const tbds = dtBody.getBoundingClientRect()
@@ -836,21 +873,23 @@ export class NgxDeebodata {
         if(this.rowNumbers && rlen){
             const hasHgt: RowNumber[] = this.rowNos.filter( r => r.height)
             this.rowNos = []
+            let tmpRows = []
             let n = (this.lastElRowIndex + 1) - rlen
             for(n; n <= this.lastElRowIndex; n++){
                 const useN = n + 1;
                 if(useN < 1)//1 is minimum
                     continue;
-                let rn: any = {number: useN}
+                let rn: any = {number: useN, height: this.dataTableService.defltRHgt}
                 if(hasHgt.length){
                     const hh = hasHgt.find( h => h.number === n+1)
                     if(hh)
                         rn.height = hh.height
                 }
-                this.rowNos.push(rn)
+                tmpRows.push(rn)
             }
+            this.rowNos = [...tmpRows]
             const listen = this.dataTableService.listenForScroll();
-            const r1 = document.getElementsByClassName("data-table-row")[0]
+            const r1 = this.dtRowContainer.nativeElement.children[0]
             if(r1 && listen){
                 const ty = (this.transY()*(this.scrollDir === "down" ? -1 : 1));
                 const useCalc = -(this.dataTableService.tblTop - r1.getBoundingClientRect().top) - ty;
@@ -1067,7 +1106,7 @@ export class NgxDeebodata {
               const limit = this.paginate ? Math.min(this.dataTableService.rowsPerPage, len) : Math.min(init, len)
               let localRows: DataRow[] = [];
               for(n; n < limit; n++){
-                const row: DataRow = { id: "dataTableRow" + n, index: n, width: this.useRowWid, cells: [], height: this.dataTableService.defltRHgt }
+                const row: DataRow = { id: this.dataTableService.dtrPre() + n, index: n, width: this.useRowWid, cells: [], height: this.dataTableService.defltRHgt }
                 let k = 0
                 for(k; k < colLen; k++)
                     addCell(data[n][cols[k]], cols[k], row, n)
@@ -1087,7 +1126,7 @@ export class NgxDeebodata {
                 this.testHideMinBtn() 
                 this.setColHeaderHgt()
                 this.setRowSelChecksPlacement()
-                this.dataTableService.setTblBounds()
+                this.dataTableService.setTblBounds(this.dataTableHeaders?.nativeElement, this.dataTableBody?.nativeElement, this.paginatorContainer?.nativeElement, this.dataTable?.nativeElement)
               })
               timer(250).subscribe( () => { 
                 this.dataTableService.setIdealColumnWidth.next(true)
@@ -1333,8 +1372,8 @@ export class NgxDeebodata {
         const len = useCols.length
         for(i; i < len; i++){
             const col = useCols[i]
-            const el = document.getElementById("columnHeader" + this.common.elifyCol(col))
-            if(el){
+            const el = document.getElementById(this.dataTableService.columnHeaderPre() + this.common.elifyCol(col))
+            if(el && this.dataTableHeaders?.nativeElement.contains(el)){
                 const elbds = el.getBoundingClientRect()
                 if(elbds.left >= (this.dataTableService.tblLeft-lftPlus) && elbds.right < this.dataTableService.tblRight)
                     vCols.push(col)
@@ -1508,8 +1547,8 @@ export class NgxDeebodata {
         for(let p = (clen-1); p >= 0; p--){
             const col = allcols[p]
             const elcol = this.common.elifyCol(col)
-            const head = document.getElementById("columnHeader" + elcol)
-            if(head){
+            const head = document.getElementById(this.dataTableService.columnHeaderPre() + elcol)
+            if(head && this.dataTableHeaders?.nativeElement.contains(head)){
                 const bds = head.getBoundingClientRect()
                 if(bds.left > this.dataTableService.tblRight)
                     continue
@@ -1605,7 +1644,7 @@ export class NgxDeebodata {
                         bhToSub += defNum
                     }
                     if(doIt){
-                        row.id = this.dtr + index
+                        row.id = this.dataTableService.dtrPre() + index
                         row.index = index
                         if(!this.dtChecks.includes(index))
                             chks.push(index)
@@ -1642,7 +1681,7 @@ export class NgxDeebodata {
                         bhToAdd += defNum
                     }
                     if(doIt){
-                        row.id = this.dtr + index
+                        row.id = this.dataTableService.dtrPre() + index
                         row.index = index
                         if(!this.dtChecks.includes(index))
                             chks.push(index)
@@ -1662,7 +1701,7 @@ export class NgxDeebodata {
     }
 
     getLastRowBot(): number {
-        const els = document.getElementsByClassName("data-table-row")
+        const els = this.dtRowContainer.nativeElement.children
         return els[els.length-1]?.getBoundingClientRect()?.bottom || this.dataTableService.tblBot;
     }
 
@@ -1723,7 +1762,7 @@ export class NgxDeebodata {
     }
 
     getFirstRowTop(): number {
-        return document.getElementsByClassName("data-table-row")[0]?.getBoundingClientRect().top || this.dataTableService.tblTop;
+        return this.dtRowContainer.nativeElement.children[0]?.getBoundingClientRect().top || this.dataTableService.tblTop;
     }
 
     execVertScrollUp(cols: string[], colLen: number, currTop: number, force?: boolean) {
@@ -1814,12 +1853,17 @@ export class NgxDeebodata {
     }
 
     scrollToRowGroup(rClass: string) {
-        const el = document.getElementsByClassName(rClass)[0]
-        if(el){
-            const dtb = this.dataTableBody.nativeElement
-            const dttop = dtb.getBoundingClientRect().top - dtb.scrollTop
-            const etop = el.getBoundingClientRect().top
-            this.dataTableBody.nativeElement.scrollTop = etop - dttop
+        let i = 0
+        const els = document.getElementsByClassName(rClass)
+        const len = els.length
+        const dtb = this.dataTableBody.nativeElement
+        for(i; i < len; i++){
+            const el = els[i]
+            if(el && dtb.contains(el)){
+                const dttop = dtb.getBoundingClientRect().top - dtb.scrollTop
+                const etop = el.getBoundingClientRect().top
+                this.dataTableBody.nativeElement.scrollTop = etop - dttop
+            }
         }
     }
 
@@ -1839,7 +1883,7 @@ export class NgxDeebodata {
             const elD = <HTMLDivElement>document.querySelector(".relly.edit-input")
             if(!elD)//look for the one that's relly (relative) positioned first
                 el = <HTMLInputElement>document.getElementsByClassName("edit-input")[0]
-            const cell = document.querySelector("#dataTableRow" + this.dataTableService.currEditIndex + " .data-cell-" + this.common.elifyCol(this.dataTableService.currEditCol))
+            const cell = document.querySelector("#" + this.dataTableService.dtrPre() + this.dataTableService.currEditIndex + " .data-cell-" + this.common.elifyCol(this.dataTableService.currEditCol))
             if((el || elD) && cell){
                 const rbds = rel.getBoundingClientRect()
                 const cbds = cell.getBoundingClientRect();
@@ -1872,7 +1916,7 @@ export class NgxDeebodata {
     clearValidatedEdit(e?: any, clearDrag?: boolean) {
         if(this.listenToCellDraggerMouseMove)
             return this.killValEdit();
-        if((e && e.type === "blur") || (e && e.type === "focus" && e.relatedTarget?.id === "fCellDragger")){
+        if((e && e.type === "blur") || (e && e.type === "focus" && e.relatedTarget?.id === this.dataTableService.fcDrag())){
             setTimeout( () => { this.handleCellDraggerInit() })
         } else {
             this.execValClear(e, clearDrag)
@@ -1911,8 +1955,8 @@ export class NgxDeebodata {
     }
 
     handleDraggerKD(e: any) {
-        const row = document.getElementById("dataTableRow" + this.dataTableService.currEditIndex)
-        if(row && this.dataTableService.currEditCol){
+        const row = document.getElementById(this.dataTableService.dtrPre() + this.dataTableService.currEditIndex)
+        if(row && this.dataTableService.currEditCol && this.dataTableBody?.nativeElement.contains(row)){
             let targRow;
             let bds;
             if(e && this.common.isDownKey(e))
@@ -1957,7 +2001,7 @@ export class NgxDeebodata {
 
      handleCellDraggerInit() {
          const actEl = document.activeElement
-         if(actEl && actEl.id === "fCellDragger"){
+         if(actEl && actEl.id === this.dataTableService.fcDrag()){
             this.focusCellDragger()
          } else {
            if(!actEl || (actEl && !/data-cell/g.test(actEl?.className)))
@@ -1967,7 +2011,7 @@ export class NgxDeebodata {
 
      focusCellDragger() {
         this.killValEdit()
-        const cell= document.querySelector("#dataTableRow" + this.dataTableService.currEditIndex + " .data-cell-" + this.common.elifyCol(this.dataTableService.currEditCol))
+        const cell= document.querySelector("#" + this.dataTableService.dtrPre() + this.dataTableService.currEditIndex + " .data-cell-" + this.common.elifyCol(this.dataTableService.currEditCol))
         if(cell)
             cell.classList.add("dragger-cell-focused")
         this.listenToCellDraggerMouseUp = true
@@ -1995,11 +2039,6 @@ export class NgxDeebodata {
                         const nxtRowCell = <HTMLElement>document.querySelector("#" + (nxtRow.id || "notHere") + " .data-cell:not(.col-header-minimized)")
                         if(nxtRowCell)
                             nxtRowCell.focus()
-                        else{
-                            const skip = document.getElementById("skipTo")
-                            if(skip)
-                                skip.focus()
-                        }
                     }
                 }
             }
@@ -2036,11 +2075,11 @@ export class NgxDeebodata {
             let dragId: number = -1;
             const targ = e.target
             try{
-                if(/dataTableRow/g.test(targ.id)){
-                    dragId = parseInt(targ.id.replace("dataTableRow", ""))
+                if(new RegExp(this.dataTableService.dtrPre(), "g").test(targ.id)){
+                    dragId = parseInt(targ.id.replace(new RegExp(this.dataTableService.dtrPre(), "g"), ""))
                 } else {
                     if(/data-cell/g.test(targ.className))
-                        dragId = parseInt(targ.getAttribute("data-index").replace("dataTableRow", ""))
+                        dragId = parseInt(targ.getAttribute("data-index").replace(new RegExp(this.dataTableService.dtrPre(), "g"), ""))
                 }
                 let cell;
                 const row = this.rows.find( r => r.index === dragId)
@@ -2054,7 +2093,7 @@ export class NgxDeebodata {
                     this.dataTableService.currEditIndex = dragId
                     this.execCellEdit({ column: this.dataTableService.currEditCol, value: val }, true)
                     row.editedInDrag = true
-                    cell = document.querySelector("#dataTableRow" + dragId + " .data-cell-" + this.common.elifyCol(this.dataTableService.currEditCol))    
+                    cell = document.querySelector("#" + this.dataTableService.dtrPre() + dragId + " .data-cell-" + this.common.elifyCol(this.dataTableService.currEditCol))    
                 }
                 // if(els.length > 1){
                 //     const dir = this.scrollDir === "down" ? 1 : -1;
@@ -2138,7 +2177,7 @@ export class NgxDeebodata {
             const dtType = this.dataTableService.figureFilterType(realProp)
             const notNum = (dtType != "number" || /(year|yr|fy)/g.test(realProp.toLocaleLowerCase())) ? true : false
             const useTxt = this.dataTableService.figureCellText(val, notNum);
-            const cellEl = document.querySelector("#dataTableRow" + this.dataTableService.currEditIndex + " .data-cell-" + this.common.elifyCol(realProp))
+            const cellEl = document.querySelector("#" + this.dataTableService.dtrPre() + this.dataTableService.currEditIndex + " .data-cell-" + this.common.elifyCol(realProp))
             if(cellEl){
                 if(useTxt.prop === "textContent")
                     cellEl.textContent = useTxt.value;
@@ -2219,11 +2258,11 @@ export class NgxDeebodata {
         const len = els.length
         for(i; i < len; i++){
             const el = els[i]
-            const col = el.id.replace(/btnMin/g, "")
+            const col = el.id.replace(new RegExp(this.dataTableService.btnMinPre(), "g"), "")
             const ellf = el.getBoundingClientRect().left
-            const srt = document.getElementById("btnSort" + col)
+            const srt = document.getElementById(this.dataTableService.btnSortPre() + col)
             const colHd = this.columnHeaders.find( c => c.column === this.common.replaceUniSep(col)) 
-            if(colHd && srt){
+            if(colHd && srt && this.dataTableHeaders?.nativeElement.contains(srt)){
                 const srtrt = srt.getBoundingClientRect().right + 5;
                 if(ellf < srtrt)
                     colHd.hideMinCol = true
@@ -2245,7 +2284,10 @@ export class NgxDeebodata {
                 this.rowNumHeader.nativeElement.style.height = useHgt;
             if(this.rowIncreaseTO)
                 this.rowIncreaseTO.unsubscribe()
-            this.rowIncreaseTO = timer(10).subscribe( () => { this.dataTableService.setTblBounds(); this.setRowSelChecksPlacement() })
+            this.rowIncreaseTO = timer(10).subscribe( () => { 
+                this.dataTableService.setTblBounds(this.dataTableHeaders?.nativeElement, this.dataTableBody?.nativeElement, this.paginatorContainer?.nativeElement, this.dataTable?.nativeElement); 
+                this.setRowSelChecksPlacement() 
+            })
         }
 
        setSingleRowHgt(val: any, row?: any, force?: boolean) {
@@ -2273,17 +2315,20 @@ export class NgxDeebodata {
         }
 
         checkTabHorizScroll(id: string) {
-            const colH = document.getElementById("columnHeader" + id)
+            const colH = document.getElementById(this.dataTableService.columnHeaderPre() + id)
             const dtb = this.dataTableBody.nativeElement
-            if(colH && dtb){
+            if(colH && dtb && this.dataTableHeaders?.nativeElement.contains(colH)){
                 let left = (colH.getBoundingClientRect().left-50)
                 if(colH){
                     if(this.currGroupValues().length){
                         let i = 0
                         const els = document.getElementsByClassName("group-panel-grid")
                         const len = els.length
-                        for(i; i < len; i++)
-                            els[i].scrollBy(left, 0)
+                        for(i; i < len; i++){
+                            const el = els[i]
+                            if(dtb.contains(el))
+                                el.scrollBy(left, 0)
+                        }
                     } else {
                         left -= (this.rowNumbers ? 75 : 0)
                         dtb.scrollBy(left, 0)
@@ -2481,8 +2526,8 @@ export class NgxDeebodata {
         if(field && field !== "topLevelDataFilter"){
             let room = 0
             let offst = 3
-            const fhead = document.getElementById("columnHeader" + this.common.elifyCol(field))
-            if(fhead){
+            const fhead = document.getElementById(this.dataTableService.columnHeaderPre() + this.common.elifyCol(field))
+            if(fhead && this.dataTableHeaders?.nativeElement.contains(fhead)){
                 const bds = fhead.getBoundingClientRect()
                 room = this.dataTableService.tblRight - bds.right
                 if(room > 0)
@@ -2495,7 +2540,7 @@ export class NgxDeebodata {
             const item = this.dataTableService.currFilData[n]
             const index = !reset ? this.dataTableService.findObjIndxInData(item) : n
             if(index > -1){
-                const row: DataRow = { id: "dataTableRow" + index, index: index, width: this.useRowWid, cells: [], height: this.dataTableService.defltRHgt }
+                const row: DataRow = { id: this.dataTableService.dtrPre() + index, index: index, width: this.useRowWid, cells: [], height: this.dataTableService.defltRHgt }
                 let k = 0
                 for(k; k < colLen; k++){
                     const col = uCols[k]?.column
@@ -2551,7 +2596,7 @@ export class NgxDeebodata {
     }
 
     styleEmptyFilDataRow(tbody: HTMLElement, tbodyX: number) {
-        const row = <HTMLElement>document.getElementsByClassName("data-table-row-no-data")[0]
+        const row = this.noDataRow?.nativeElement
         if(row){
             row.style.width = this.dataTableHeaders.nativeElement.scrollWidth + "px"
             timer(100).subscribe( () => {tbody.scrollLeft = tbodyX})
@@ -2596,7 +2641,10 @@ export class NgxDeebodata {
             this.hiddenCols.push(col)
         else
             this.hiddenCols = this.hiddenCols.filter( c => c !== col)
-        timer(0).subscribe( () => { this.dataTableService.setTblBounds(); this.testHideMinBtn() })
+        timer(0).subscribe( () => { 
+            this.dataTableService.setTblBounds(this.dataTableHeaders?.nativeElement, this.dataTableBody?.nativeElement, this.paginatorContainer?.nativeElement, this.dataTable?.nativeElement); 
+            this.testHideMinBtn() 
+        })
         timer(750).subscribe( () => { 
             if(!fullClear || (fullClear && this.hiddenCols.length === 1)){
                 this.setTableWidthOnChange()
@@ -2611,10 +2659,14 @@ export class NgxDeebodata {
 
     scrollAllGBPanels() {
         let i = 0
+        const dtb = this.dataTableBody.nativeElement
         const els = document.getElementsByClassName("group-panel-grid")
         const len = els.length
-        for(i; i < len; i++)
-            els[i].scrollBy(1, 0)
+        for(i; i < len; i++){
+            const el = els[i]
+            if(dtb.contains(el))
+                els[i].scrollBy(1, 0)
+        }
     }
 
     setTableWidthOnChange() {
@@ -2631,7 +2683,7 @@ export class NgxDeebodata {
 
     setHoldingCheckCls() {
         if(!this.disableRowSelection)
-            this.dataTableService.firstCol = this.columnHeaders.filter( c => !c.minimized)[0].column
+            this.dataTableService.firstCol = this.columnHeaders.filter( c => !c.minimized)[0]?.column
     }
 
     setDataRowWidthsOnMinimize(width: number) {
@@ -2657,7 +2709,7 @@ export class NgxDeebodata {
         const len = els.length
         for(i; i < len; i++){
             const el = <HTMLInputElement>els[i]
-            if(el)
+            if(el && this.dataTableHeaders?.nativeElement.contains(el))
                 el.value = ""
         }
     }
@@ -2666,7 +2718,7 @@ export class NgxDeebodata {
         let i = 0
         const len = this.canGroupBy().length
         for(i; i < len; i++){
-            const el = <HTMLInputElement>document.getElementById("groupby" + this.canGroupBy()[i])
+            const el = <HTMLInputElement>document.getElementById(this.dataTableService.groupByPre() + this.canGroupBy()[i])
             if(el)
                 el.checked = false
         }
@@ -2685,7 +2737,7 @@ export class NgxDeebodata {
         this.columnOfInterest.set("")
         this.currGroupValues.set([])
         this.dataTableService.currGroup = ""
-        this.dataTableService.setTblBounds()
+        this.dataTableService.setTblBounds(this.dataTableHeaders?.nativeElement, this.dataTableBody?.nativeElement, this.paginatorContainer?.nativeElement, this.dataTable?.nativeElement)
         this.dataTableService.resetFilSrtTracker()
         this.dataTableService.currFilData = this.dataTableService.mainData.filter( d => { return true })
         this.renderCurrData(true, col)

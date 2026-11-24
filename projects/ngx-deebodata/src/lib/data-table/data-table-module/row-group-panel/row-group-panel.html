@@ -1,21 +1,21 @@
-<div class="row-group-panel row-group-panel-{{elifyGrouping}}" [ngClass]="{'open-panel': open(), 'hide': !count}">
+<div #rowGrpPanel class="row-group-panel row-group-panel-{{elifyGrouping}}" [ngClass]="{'open-panel': open(), 'hide': !count}">
     <button class="no-btn" (click)="openGroup()">
         <span class="v-mid md-text">{{uiGroupValue}} ({{count | number}})</span>&nbsp;
         <i class="material-icons v-mid" aria-hidden="false">{{open() ? "keyboard_arrow_down" : "chevron_right"}}</i>
     </button>
 </div>
 @if(showRowNumbers && open()){
-    <div class="relly">
+    <div #rowNumContain class="relly">
         @for(num of rowNums; track $index){
             <span class="gb-row-num row-nums-{{elifyGrouping}} invisible" >{{num | number}}</span>
         }
     </div>
 }
 @if(open()){
-    <div #panelDataGrid [id]="'panelDataGrid' + elifyGrouping" style="overflow: auto;margin-top: 3px" class="group-panel-grid panel-height"
+    <div #panelDataGrid [id]="dataTableService.pdgPre() + elifyGrouping" style="overflow: auto;margin-top: 3px" class="group-panel-grid panel-height"
     (scroll)="handleScroll($event)" (scrollend)="handleScrollEnd()">
         <div #aboveArea [ngStyle]="{'height': aboveHgt() + 'px', 'width': useRowWid}"></div>
-        <div [style.transform]="'translateY('+transY()+'px)'">
+        <div #gbRowContainer [style.transform]="'translateY('+transY()+'px)'">
             @for(row of rows; track $index){
                 <div [id]="row.id" class="data-table-row rows-for-{{elifyGrouping}}" [attr.data-index]="row.index"
                     [ngStyle]="{'width': row.width, 'height': row.height}" >
@@ -37,11 +37,5 @@
             }
         </div>
         <div #belowArea [ngStyle]="{'height': belowHgt() + 'px', 'width': useRowWid}"></div>
-        @if(!panelData.length){
-            <div 
-            class="data-table-row panel-height flex-center data-table-row-no-data" style="width: 100%; white-space: normal;">
-                <div class="center">Loading...</div>
-            </div>
-        }
     </div>
 }

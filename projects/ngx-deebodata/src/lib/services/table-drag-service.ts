@@ -75,16 +75,16 @@ export class TableDragService {
                 }catch(err){}
             }
 
-            handleHeaderSizeAdjust(e: any) {
+            handleHeaderSizeAdjust(e: any, parent: HTMLElement|null|undefined) {
                 e && e.preventDefault()
                 let col
                 const cls = "moveable-col"
                 const rcls = "moveable-row"
                 const clist = e.target.classList
                 if(e.type === "mousedown"){
-                    if(e && e.target.id && /columnHeader/g.test(e.target.id))
+                    if(e && e.target.id && new RegExp(this.dataTableService.columnHeaderPre(), "g").test(e.target.id))
                         col = e.target
-                    if(e && e.target.parentElement.id && /columnHeader/g.test(e.target.parentElement.id))
+                    if(e && e.target.parentElement.id && new RegExp(this.dataTableService.columnHeaderPre(), "g").test(e.target.parentElement.id))
                         col = e.target.parentElement
                     if(col){
                         const cBds = col.getBoundingClientRect()
@@ -93,12 +93,12 @@ export class TableDragService {
                             let useX = e.offsetX
                             if(useX > ((cBds.right-cBds.left)/2)){//the one we're aiming for IS the target
                                 useX = (useX - cBds.width)
-                                rootCol = col.id.replace(/columnHeader/g, "")
+                                rootCol = col.id.replace(new RegExp(this.dataTableService.columnHeaderPre(), "g"), "")
                             } else {
                                 if(!col.nextElementSibling && (e.offsetX > ((cBds.right-cBds.left)/2)))//last and grabbing the end of it
-                                    rootCol = col.id.replace(/columnHeader/g, "")
+                                    rootCol = col.id.replace(new RegExp(this.dataTableService.columnHeaderPre(), "g"), "")
                                 else
-                                    rootCol = col.previousElementSibling.id.replace(/columnHeader/g, "")
+                                    rootCol = col.previousElementSibling.id.replace(new RegExp(this.dataTableService.columnHeaderPre(), "g"), "")
                             }
                             this.dataTableService.currColumnEdit =rootCol
                             this.colDragStartFrmHeaderTracker = { col: rootCol, xstart: useX, ystart: null, resized: false }
@@ -114,7 +114,7 @@ export class TableDragService {
                         if(!clist.contains(cls) && !clist.contains(rcls)){//drag column to diff position
                             let rootCol;
                             this.colMoving = true
-                            rootCol = col.id.replace(/columnHeader/g, "")
+                            rootCol = col.id.replace(new RegExp(this.dataTableService.columnHeaderPre(), "g"), "")
                             this.dataTableService.currColumnEdit =rootCol
                             this.colDragStartFrmHeaderTracker = { col: rootCol, xstart: null, ystart: null, resized: false }
                             this.listenForColMvMouseUp = true
@@ -131,7 +131,7 @@ export class TableDragService {
                             this.doHeaderHeight(e)
                     } else {
                         if(this.listenForColMvMouseUp)
-                            this.handleColMoveMouseUp(e)
+                            this.handleColMoveMouseUp(e, parent)
                     }
                 }
             }
@@ -200,7 +200,7 @@ export class TableDragService {
 
             doHeaderWidth(e: any) {
                 try{
-                    const head = document.getElementById("columnHeader" + this.colDragStartFrmHeaderTracker.col)
+                    const head = document.getElementById(this.dataTableService.columnHeaderPre() + this.colDragStartFrmHeaderTracker.col)
                     if(head){
                       const hbds = head?.getBoundingClientRect()
                       const useWid = e.pageX - (hbds.left+window.scrollX)
@@ -212,7 +212,7 @@ export class TableDragService {
 
             doHeaderHeight(e: any) {
                 try{
-                    const hdrs = document.querySelector(".col-header:not(.col-header-minimized)") || document.getElementById("dataTableHeaders")
+                    const hdrs = document.getElementById(this.dataTableService.dataTableHeadersId())
                     if(hdrs){
                       const hdrbds = hdrs.getBoundingClientRect()
                       const useHgt= e.pageY - (hdrbds.top+window.scrollY)
@@ -224,7 +224,7 @@ export class TableDragService {
 
             doCellWidth(e: any) {
                 try{
-                    const head = document.getElementById("columnHeader" + this.colDragStartFrmCellTracker.col)//this looks outta place but is ok here
+                    const head = document.getElementById(this.dataTableService.columnHeaderPre() + this.colDragStartFrmCellTracker.col)//this looks outta place but is ok here
                     if(head){
                       const useWid = e.pageX - (head.getBoundingClientRect().left+window.scrollX)
                       this.colDragStartFrmCellTracker.resized = true
@@ -299,7 +299,7 @@ export class TableDragService {
                 })
             }
 
-            handleColMoveMouseUp(e: any) {
+            handleColMoveMouseUp(e: any, parent: HTMLElement|null|undefined) {
                 try{ e && e.preventDefault() } catch(e) {}
                 const isMUp = e && e.type === "mouseup";
                 if(isMUp){
@@ -311,7 +311,7 @@ export class TableDragService {
                     if(window.getSelection)
                         window.getSelection()?.removeAllRanges();
                     if(this.dataTableService.currColumnEdit){
-                        const colRef = document.getElementById("columnHeader" + this.dataTableService.currColumnEdit)
+                        const colRef = document.getElementById(this.dataTableService.columnHeaderPre() + this.dataTableService.currColumnEdit)
                         if(colRef){
                           let xDrop = e.clientX
                           let i = 0;
@@ -322,7 +322,7 @@ export class TableDragService {
                           const nwColLft = Math.floor(colRef.getBoundingClientRect().left)
                           for(i; i < len; i++){
                               const col = cols[i]
-                              if(!col.classList.contains("col-header-minimized")){
+                              if(parent && parent.contains(col) && !col.classList.contains("col-header-minimized")){
                                   const elLft = Math.floor(col.getBoundingClientRect().left)
                                   lfts.push(elLft)
                                   if(col.id !== colRef.id)

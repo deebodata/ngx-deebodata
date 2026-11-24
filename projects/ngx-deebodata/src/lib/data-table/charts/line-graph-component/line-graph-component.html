@@ -9,7 +9,7 @@
 <div #auxOptsCont style="padding-bottom: 17px;">
     <div class="qtr-wid center v-mid">
         @if(valOpts().length){
-            <select [name]="'valSel' + common.elifyCol(column)" [id]="'valSel' + common.elifyCol(column)" [(ngModel)]="selDdVal"
+            <select [name]="dataTableService.valSelPre() + common.elifyCol(column)" [id]="dataTableService.valSelPre() + common.elifyCol(column)" [(ngModel)]="selDdVal"
             (change)="handleValSelChange($any($event).target.value)" style="max-width: 80%">
                 @for(o of valOpts(); track o){
                     <option [value]="o" [selected]="o === selDdVal">{{o}}</option>
@@ -17,7 +17,7 @@
             </select>
         }
     </div><div class="qtr-wid center v-mid">
-        <select [name]="'timeDiff' + common.elifyCol(column)" [id]="'timeDiff' + common.elifyCol(column)" 
+        <select [name]="dataTableService.timeDiffPre() + common.elifyCol(column)" [id]="dataTableService.timeDiffPre() + common.elifyCol(column)" 
         (change)="handleTimeDiffChange($any($event).target.value)" style="max-width: 88%" [(ngModel)]="selTDOpt">
             <option value="-1" [selected]="selTDOpt === -1">All time</option>
             @for(t of timeDiffOpts; track t.val){
@@ -26,7 +26,7 @@
         </select>
     </div><div class="half-wid v-mid center dontwrap {{currentDeltaCls}}" [innerHTML]="currentDelta"></div>
 </div>
-<div #lgContain [id]="'lineGraph' + common.elifyCol(column)" class="inner-bg-contain" style="margin-bottom: 33px;">
+<div #lgContain [id]="dataTableService.lineGraphPre() + common.elifyCol(column)" class="inner-bg-contain" style="margin-bottom: 33px;">
     <div #yAxis class="lg-n-marker-cont" [style.height]="totalHgt + 'px'">
         @for(n of naddedtks(); track n.value; let i = $index){
             <div class="bg-dep-var" [class.invisible]="n.value && n.value === maxYVal" [attr.data-number]="n.value"

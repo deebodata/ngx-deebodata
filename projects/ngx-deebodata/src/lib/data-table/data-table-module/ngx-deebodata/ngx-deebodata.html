@@ -1,4 +1,4 @@
-<div class="deebo-data-grid-section">
+<div #deeboSection class="deebo-data-grid-section">
     <div class="hidden-cols">
         @for (hcol of hiddenCols; track hcol) {
             <button type="button" class="btn-maximize-col" (click)="maximizeColCells(hcol)">{{hcol}}</button>
@@ -6,8 +6,8 @@
     </div>
     <div class="controls" >
         @if(!disableOmniFilter){
-            <input type="text" #topLevelDataFilter autocomplete="off" aria-label="Filter any column" name="topLevelDataFilter" placeholder="Filter any column..." 
-            (input)="topFilterOnKeyUp($event)" (keyup)="topFilterOnKeyUp($event)" maxlength="255" [(ngModel)]="topLevelFilter" 
+            <input type="text" [attr.name]="dataTableService.topLevelDataFilterId()" #topLevelDataFilter autocomplete="off" aria-label="Filter any column" placeholder="Filter any column..." 
+            (input)="topFilterOnKeyUp($event)" (keyup)="topFilterOnKeyUp($event)" maxlength="255" [(ngModel)]="topLevelFilter" class="top-level-filter"
             [disabled]="dataTableService.showCharts() || !dataTableService.mainData.length || handlingSelRows" autocomplete="off" />
         }
         @if(currGroupValues().length){
@@ -30,12 +30,12 @@
         class="btn-reset" (click)="resetCurrentData()" >Reset</button>
     </div>
     @if (!disableRowSelection){
-        <div class="relly" [ngClass]="{'dt-checks': rowNumbers, 'hide' : isMultiFiltering() || dataTableService.isFiltering() || 
+        <div #rowCheckContainer class="relly" [ngClass]="{'dt-checks': rowNumbers, 'hide' : isMultiFiltering() || dataTableService.isFiltering() || 
         dataTableService.isSorting() || currGroupValues().length || currSelEditOpts.length }">
             @for (chk of dtChecks; track $index) {
-                <input [id]="'checkDataTableRow' + chk" class="select-row-check invisible" 
-                [checked]="dataTableService.currSelRows.indexOf(chk) > -1" type="checkbox" [name]="'checkDataTableRow' + chk"
-                (click)="toggleSingleRowSelected(chk)" (keyup.enter)="toggleSingleRowSelected(chk)" [value]="'dataTableRow' + chk" >
+                <input [id]="dataTableService.checkDataTableRowId() + chk" class="select-row-check invisible" 
+                [checked]="dataTableService.currSelRows.indexOf(chk) > -1" type="checkbox" [name]="dataTableService.checkDataTableRowId() + chk"
+                (click)="toggleSingleRowSelected(chk)" (keyup.enter)="toggleSingleRowSelected(chk)" [value]="dataTableService.dtrPre() + chk" >
             }
         </div>
     }
@@ -74,7 +74,7 @@
         }
     </div>
     <div class="relly" style="z-index: 6;">
-        <div #fCellDragger tabindex="0" id="fCellDragger" (focus)="focusCellDragger()" (blur)="execValClear(true)"
+        <div #fCellDragger tabindex="0" [id]="dataTableService.fcDrag()" (focus)="focusCellDragger()" (blur)="execValClear(true)"
         (mousedown)="focusCellDraggerFromMouseDown()" (keydown)="handleFDragTab($event)" (keydown)="handleDraggerKD($event)"
         [ngClass]="{'hide': dataTableService.currEditIndex < 0, 'focused-cell-dragger': dataTableService.currEditIndex > -1 }"></div>
     </div>
@@ -91,14 +91,14 @@
         <div style="overflow: hidden;" [style.height]="dataTableService.dTblHeight() + 'px'">
             <div [ngStyle]="{'overflow': 'auto', 'marginTop': rnBTop() + 'px' }">
                 @for (num of rowNos; track num.number) {
-                    <div [id]="'rn' + num.number" class="flex-center num-row" [style.height]="num.height || dataTableService.defltRHgt">
+                    <div [id]="dataTableService.rnPre() + num.number" class="flex-center num-row" [style.height]="num.height">
                         <div class="small-text">{{num.number | number}}</div>
                     </div>
                 }
             </div>
         </div>
     </div><div #dataTable class="data-table" [class.inline-table]="rowNumbers && !dataTableService.showCharts() && !currGroupValues().length">
-        <div #dataTableHeaders class="data-table-headers">
+        <div #dataTableHeaders [id]="dataTableService.dataTableHeadersId()" class="data-table-headers">
             @for (col of columnHeaders; track col.column; let i = $index) {
                 <app-data-table-header
                 [columnHeader]="col"
@@ -121,11 +121,11 @@
                 ></app-data-table-header>
             }
         </div>
-        <div #dataTableBody id="dataTableBody" [ngStyle]="{ 'overflowY': 'auto', 'overflowX': currGroupValues().length ? 'hidden' : 'auto' }" 
+        <div #dataTableBody [ngStyle]="{ 'overflowY': 'auto', 'overflowX': currGroupValues().length ? 'hidden' : 'auto' }" 
         [style.height]="dataTableService.dTblHeight() + 'px'" (scroll)="handleScroll($event)" (scrollend)="handleScrollEnd()"
         [class.table-working]="isMultiFiltering() || dataTableService.isFiltering() || dataTableService.isSorting()" >
             <div #aboveArea [ngStyle]="{'height': aboveHgt() + 'px', 'width': useRowWid}"></div>
-            <div [style.transform]="'translateY('+transY()+'px)'">
+            <div #dtRowContainer [style.transform]="'translateY('+transY()+'px)'">
                 @for(row of rows; track $index){
                     <div [id]="row.id" class="data-table-row" [attr.data-index]="row.index"
                     [class.data-row-selected]="!dataTableService.displayOnlySelRows && dataTableService.currSelRows.indexOf(row.index) > -1"
@@ -138,6 +138,7 @@
                             [rawText]="cell.rawText"
                             [minimized]="cell.minimized"
                             [rowHeight]="row.height || ''"
+                            (dataTableBodyScroll)="scrollFromCell($event)"
                             (edit)="execCellEdit($event)"
                             (mousedown)="checkCellEditOnClick()"
                             [columnValClass]="cell.specialColClass"
@@ -161,6 +162,9 @@
                 [editable]="editable"
                 [horizRest]="horizRest()"
                 [columns]="columnNames"
+                [uiGroupValue]="common.titleCase(group.value)"
+                [elifyGrouping]="common.elifyCol(group.value)"
+                [dataTableBody]="dataTableBody"
                 [showRowNumbers]="rowNumbers"
                 [colOfInt]="columnOfInterest()"
                 (horizPos)="setHorizPos($event)"
@@ -169,7 +173,7 @@
                 ></app-row-group-panel>
             }
             @if(handlingPageChange || (!dataTableService.currFilData.length && !currGroupValues().length)){
-                <div [style.height]="dataTableService.dTblHeight() + 'px'" class="data-table-row flex-center data-table-row-no-data" style="width: 100%; white-space: normal;">
+                <div #noDataRow [style.height]="dataTableService.dTblHeight() + 'px'" class="data-table-row flex-center data-table-row-no-data" style="width: 100%; white-space: normal;">
                     <div class="center">{{handlingPageChange ? pageLoadMessage : dataTableService.noDataMsg}}</div>
                 </div>
             }
@@ -177,19 +181,23 @@
     </div>
     @if(paginatorReady){
         @if(paginate){
-            <lib-real-paginator
-            [omniFilter]="topLevelFilter"
-            (pageChange)="serverSideTotal > 0 ? handlePageChange($event) : renderCurrData(false)"
-            ></lib-real-paginator>
+            <div #paginatorContainer style="margin: 0;padding: 0;">
+                <lib-real-paginator
+                [omniFilter]="topLevelFilter"
+                (pageChange)="serverSideTotal > 0 ? handlePageChange($event) : renderCurrData(false)"
+                ></lib-real-paginator>
+            </div>
         } @else {
             @if(!hideFooter){
-                <app-data-table-paginator
-                [hideJumper]="hideJumpTo"
-                [filSortStr]="allFilSortInfo()"
-                (jumpTo)="jumpToRow($event)"
-                [totalRows]="dataTableService.currFilData.length"
-                [disableJump]="dataTableService.showCharts() || currGroupValues().length > 0 || !dataTableService.currFilData.length || handlingSelRows"
-                ></app-data-table-paginator><!--not an actual paginator-->
+                <div #paginatorContainer style="margin: 0;padding: 0;">
+                    <app-data-table-paginator
+                    [hideJumper]="hideJumpTo"
+                    [filSortStr]="allFilSortInfo()"
+                    (jumpTo)="jumpToRow($event)"
+                    [totalRows]="dataTableService.currFilData.length"
+                    [disableJump]="dataTableService.showCharts() || currGroupValues().length > 0 || !dataTableService.currFilData.length || handlingSelRows"
+                    ></app-data-table-paginator><!--not an actual paginator-->
+                </div>
             }
         }
     }

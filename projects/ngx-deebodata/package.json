@@ -1,6 +1,6 @@
 {
   "name": "ngx-deebodata",
-  "version": "0.9.4",
+  "version": "0.9.5",
   "description": "Angular data grid with virtual scroll or pagination options (server-side and in memory), integrated charts, row grouping, column resizing, re-ordering, column hiding, cell editing, tab accessibility, sorting with priority, and advanced filtering.",
   "peerDependencies": {
     "@angular/common": "^22.0.7",

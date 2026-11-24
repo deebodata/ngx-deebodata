@@ -89,7 +89,7 @@ export class DataTableHeader {
               this.filterInputEl?.nativeElement.setAttribute("readonly", "true")
           })
         }
-        if(this.columnHeader.dataType === "date"){
+        if(this.columnHeader.dataType === "date" || this.columnHeader.dataType === "number"){
             timer(50).subscribe( () => {
                 this.filterInputEl?.nativeElement.addEventListener("change", e => { this.filterDateOnKeyUp(e) })
             })
@@ -190,9 +190,7 @@ export class DataTableHeader {
   }
 
   filterDateOnKeyUp(event: any) {
-    const elId: string = event.target?.id?.replace(/filter/g, "")
-    const field: string = this.common.replaceUniSep(elId)
-    this.filterOnKeyUp(event, field, event.target.value)
+    this.filterOnKeyUp(event, this.columnHeader.column, event.target.value)
   }
 
   filTO: any = null;
@@ -233,7 +231,7 @@ export class DataTableHeader {
           } else {
               this.showBtnX = false
           }
-          const tlFil = <HTMLInputElement>document.getElementsByName("topLevelDataFilter")[0]
+          const tlFil = <HTMLInputElement>document.getElementById(this.dataTableService.topLevelDataFilterId())
           if(tlFil)
             tlFil.value = ""
       } else {

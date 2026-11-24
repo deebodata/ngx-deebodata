@@ -21,7 +21,7 @@ export class RowGroupMenu {
   @ViewChild("ddSelect", { static: true }) ddSelect!: ElementRef<HTMLDivElement>;
 
   constructor(public common: CommonService,
-              private dataTableService: DataTableService,
+              public dataTableService: DataTableService,
   ) { }
 
   ngOnInit() {
@@ -49,7 +49,7 @@ export class RowGroupMenu {
       let i = 0
       const len = this.groups().length
       for(i; i < len; i++){
-        const el = <HTMLInputElement>document.getElementById("groupby" + this.groups()[i])
+        const el = <HTMLInputElement>document.getElementById(this.dataTableService.groupByPre() + this.groups()[i])
         if(el)
           el.checked = false
       }

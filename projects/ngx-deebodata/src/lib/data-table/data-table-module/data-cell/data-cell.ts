@@ -44,6 +44,7 @@ export class DataCellComponent {
   @Output("dragListen") dragListen: EventEmitter<any> = new EventEmitter()
   @Output("validateEditFocus") validateEditFocus: EventEmitter<any> = new EventEmitter()
   @Output("clearVEditFocus") clearVEditFocus: EventEmitter<any> = new EventEmitter()
+  @Output("dataTableBodyScroll") dataTableBodyScroll: EventEmitter<number> = new EventEmitter()
   @ViewChild('cellEl', { static: true }) cellElem!: ElementRef<HTMLElement>
   rightAlign: string = "";//for numbers, always add a space in front
   symbolCls: string = "";//also for numbers only, always add a space in front
@@ -211,13 +212,12 @@ export class DataCellComponent {
       if(!this.canEdit && !this.cell.html)
         this.dataTableService.lockCellFocus.set(true);
       this.dataTableService.currEditCol = this.cell.column
-      this.dataTableService.currEditIndex = parseInt(this.rowId.replace(/^dataTableRow/, ""))
+      this.dataTableService.currEditIndex = parseInt(this.rowId.replace(new RegExp(this.dataTableService.dtrPre(), "g"), ""))
       const cellWid = parseInt(this.dataTableService.useColWid?.replace(/px/g, "") || "250")
       if(cell.getBoundingClientRect().right+cellWid >= this.dataTableService.tblRight){
           if(!noHScrl){
               this.dataTableService.autoScrollOnEdit = true
-              const grid = <HTMLElement>document.getElementById("dataTableBody")
-              grid.scrollBy((cellWid+1), 0)
+              this.dataTableBodyScroll.emit(cellWid)                
           }
           if(!this.setCellEditScrlActionTO){
               return this.setToEditAfterTO()
@@ -292,18 +292,12 @@ export class DataCellComponent {
             //     if(this.tabDownTO)
             //       this.tabDownTO.unsubscribe()
             //     this.tabDownTO = timer(110).subscribe( () => {
-            //       const nxtRowCell: HTMLElement|null = <HTMLElement>document.getElementById(nxtRow.id)?.firstElementChild;//<HTMLElement>document.querySelector("#" + (nxtRow.id || "notHere") + " .data-cell:not(.col-header-minimized)")
+            //       const nxtRowCell: HTMLElement|null = <HTMLElement>document.getElemelntById(nxtRow.id)?.firstElementChild;//<HTMLElement>document.querySelector("#" + (nxtRow.id || "notHere") + " .data-cell:not(.col-header-minimized)")
             //       if(nxtRowCell)
             //           nxtRowCell.focus()
             //         timer(0).subscribe( () => {this.dataTableService.blockEditOnManualScrl = false })
             //     })
             //   }
-            //     else{
-            //         const skip = document.getElementById("skipTo")
-            //         if(skip)
-            //             skip.focus()
-            //         timer(0).subscribe( () => {this.dataTableService.blockEditOnManualScrl = false })
-            //     }
           }
       }
   }
@@ -316,7 +310,7 @@ export class DataCellComponent {
     else{
       setTimeout( () => {
         const actEl = document.activeElement
-        if(actEl && actEl.id === "fCellDragger"){
+        if(actEl && actEl.id === this.dataTableService.fcDrag()){
           el.classList.add("dragger-cell-focused")
           this.dragListen.emit(true)
         } else {

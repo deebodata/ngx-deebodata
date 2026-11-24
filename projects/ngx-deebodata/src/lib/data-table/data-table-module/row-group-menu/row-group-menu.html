@@ -10,8 +10,8 @@
         @for(grp of groups(); track grp){
             <div class="deebo-dd-opt deebo-dd-groupby">
                 <div>
-                    <label for="groupby{{grp}}">
-                        <input type="radio" name="groupby" id="groupby{{grp}}" (click)="setGrouping(grp)" (input)="setGrouping(grp)" /> 
+                    <label [for]="dataTableService.groupByPre() + grp">
+                        <input type="radio" name="groupby" [id]="dataTableService.groupByPre() + grp" (click)="setGrouping(grp)" (input)="setGrouping(grp)" /> 
                         {{common.titleCase(grp)}}
                     </label>
                 </div>

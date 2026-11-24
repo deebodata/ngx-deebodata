@@ -30,6 +30,7 @@ export class ChartsAndGraphs {
   @Input() state: string = "all";
   @Input() chartColumns: string[] = [];
   @Output("close") close: EventEmitter<boolean> = new EventEmitter();
+  @ViewChild("insights", { static: true }) insights!: ElementRef<HTMLElement>;
   @ViewChild("xChartsBtn", { static: true }) xChartsBtn!: ElementRef<HTMLButtonElement>;
   @ViewChild("chartsTitle", { static: true }) chartsTitle!: ElementRef<HTMLHeadElement>;
   @ViewChild("chartContain", { static: true }) chartContain!: ElementRef<HTMLElement>;
@@ -132,13 +133,13 @@ export class ChartsAndGraphs {
     let abv: number[] = []
     const xBtn= this.xChartsBtn.nativeElement
     const top = event.target.scrollTop
-    const rows = document.getElementsByClassName("insight-field-row")
+    const rows = this.insights?.nativeElement.children
     const rlen = rows.length
     if(xBtn)
       xBtn.style.top = (7 + top) + "px"
     for(var i = (rlen-1); i >= 0; i--){
       const row: HTMLElement = <HTMLElement>rows[i]
-      if(this.dataTableService.elIsAboveFold(row, this.dataTableService.tblBot) && !abv.includes(i) && !this.rowIsAboveFold().includes(i))
+      if(row.classList.contains("insight-field-row") && this.dataTableService.elIsAboveFold(row, this.dataTableService.tblBot) && !abv.includes(i) && !this.rowIsAboveFold().includes(i))
         abv.push(i)
     }
     this.rowIsAboveFold.set([...this.rowIsAboveFold(), ...abv])

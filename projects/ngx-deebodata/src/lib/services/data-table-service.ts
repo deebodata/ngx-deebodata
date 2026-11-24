@@ -78,6 +78,24 @@ export class DataTableService {
             deboTotal: string = "deebo_total"
             bgSep: string = "__forbargX"
             errorLoading = false;
+            topLevelDataFilterId = signal<string>("topLevelDataFilter")
+            dataTableHeadersId = signal<string>("dataTableHeaders")
+            checkDataTableRowId = signal<string>("checkDataTableRow")
+            columnHeaderPre = signal<string>("columnHeader")
+            dtrPre = signal<string>("dataTableRow")
+            groupByPre = signal<string>("groupby")
+            pdgPre = signal<string>("panelDataGrid")
+            btnSortPre = signal<string>("btnSort")
+            btnMinPre = signal<string>("btnMin")
+            skipToId = signal<string>("skipTo")
+            filterPre = signal<string>("filter")
+            selectCompPre = signal<string>("selectComp")
+            rnPre = signal<string>('rn')
+            fcDrag = signal<string>('fCellDragger')
+            valSelPre = signal<string>("valSel")
+            timeDiffPre = signal<string>("timeDiff")
+            lineGraphPre = signal<string>("lineGraph")
+            insFieldPre = signal<string>("insField")
             dataFilSrtTracker: any = {}
             comparatorOpts: any = {
                 text: ["Equals", "Not Equal", "Empty", "Not Empty", "Contains", "Starts With", "Ends With"],
@@ -153,27 +171,26 @@ export class DataTableService {
                 return this.serverSideTotal || this.currFilData.length;
             }
 
-            setTblVertBounds() {
-                const foot = document.getElementById("tableFooter")
+            setTblVertBounds(header: HTMLElement|null|undefined, body: HTMLElement|null|undefined, foot: HTMLElement|null|undefined) {
                 if(foot){
                     this.tblBot = foot.getBoundingClientRect().top;
                 } else {
-                    this.tblBot = (document.getElementById("dataTableBody")?.getBoundingClientRect().bottom || 0)
+                    this.tblBot = (body?.getBoundingClientRect().bottom || 0)
                 }
-                this.tblTop = (document.getElementsByClassName("data-table-headers")[0]?.getBoundingClientRect().bottom || 0)
+                this.tblTop = (header?.getBoundingClientRect().bottom || 0)
             }
 
-            setTblHorizBounds() {
-                const dtBds = document.getElementsByClassName("data-table")[0]?.getBoundingClientRect()
+            setTblHorizBounds(table: HTMLElement|null|undefined) {
+                const dtBds = table?.getBoundingClientRect()
                 if(dtBds){
                     this.tblLeft = (dtBds.left || 0) - 200
                     this.tblRight = (dtBds.right || 0) + 250
                 }
             }
 
-            setTblBounds() {
-                this.setTblVertBounds()//critical, do it again it's ok
-                this.setTblHorizBounds()
+            setTblBounds(header: HTMLElement|null|undefined, body: HTMLElement|null|undefined, footer: HTMLElement|null|undefined, dtable: HTMLElement|null|undefined) {
+                this.setTblVertBounds(header, body, footer)//critical, do it again it's ok
+                this.setTblHorizBounds(dtable)
                 this.groupedBoundsChange.next(true)
             }
 
@@ -195,15 +212,6 @@ export class DataTableService {
                     return false
                 }
                 return false;
-            }
-
-            chartTopIsInView(column: string) {
-                const lg = document.getElementById("insField" + this.common.elifyCol(column))
-                if(lg){
-                const lgTop = lg.getBoundingClientRect().top
-                return lgTop <= this.tblBot
-                }
-                return true
             }
 
             buildDataFilSrtTracker(data: any) {
@@ -653,7 +661,7 @@ export class DataTableService {
                     if(obj && (obj.filter || obj.comparator || obj.sort || obj.minimize || obj.freeze || obj.selDDVals)){
                         const fm = ignoreColFM ? true : (!obj.minimize && !obj.freeze);
                         const defComp = !obj.comparator || ["Equals", "Contains"].indexOf(obj.comparator) > -1;
-                        if(!obj.filter && !obj.sort && fm && defComp /*&& document.getElementById("selectComp" + elId) */&& 
+                        if(!obj.filter && !obj.sort && fm && defComp && 
                         (!obj.selDDVals || (obj.selDDVals && !obj.selDDVals.filter( (v: any) => { return v && !v.checked } ).length))){
                             //let it go
                         } else
